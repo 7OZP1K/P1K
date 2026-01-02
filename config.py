@@ -29,96 +29,32 @@ DEFAULT_PRIORITIES = ["快速原型", "功能完整", "生产就绪", "最佳实
 # ============================================================
 #                        主题配置
 # ============================================================
+# 基于 UI/UX Pro Max 专业配色方案，只保留核心主题
 
 THEMES = {
     "dark": {
-        "name": "深色主题",
+        "name": "深色",
         "mode": "dark",
         "color_theme": "blue",
-        # 背景色和模块色一一对应
-        "bgs": ["#1e1e2e", "#1a1a28", "#222232", "#1c1c2a"],
-        "cards": ["#2a2a3c", "#262638", "#2e2e40", "#28283a"],
-        "border": "#3a3a4e",
-        "text": "#c8cad0",
-        "text_dim": "#6c7086",
-        "accent": "#7aa2f7",
+        # Developer Tool 专业深色配色
+        "bg_color": "#0F172A",      # 主背景
+        "card_color": "#1E293B",    # 卡片背景
+        "border": "#334155",        # 边框
+        "text": "#F1F5F9",          # 主文字
+        "text_dim": "#94A3B8",      # 次要文字
+        "accent": "#3B82F6",        # 强调色（蓝）
     },
     "light": {
-        "name": "浅色主题",
+        "name": "浅色",
         "mode": "light",
         "color_theme": "blue",
-        "bgs": ["#f0f0f5", "#e8e8f0", "#f5f5fa", "#eaeaf2"],
-        "cards": ["#ffffff", "#f8f8fc", "#fafafe", "#f5f5f9"],
-        "border": "#d0d0d8",
-        "text": "#3c3c4c",
-        "text_dim": "#8888a0",
-        "accent": "#4070e0",
-    },
-    "nord": {
-        "name": "北欧风",
-        "mode": "dark",
-        "color_theme": "blue",
-        "bgs": ["#2e3440", "#2a303c", "#323845", "#2c323e"],
-        "cards": ["#3b4252", "#38404e", "#3e4658", "#3a4150"],
-        "border": "#4c566a",
-        "text": "#d8dee9",
-        "text_dim": "#7b88a1",
-        "accent": "#88c0d0",
-    },
-    "ocean": {
-        "name": "海洋蓝",
-        "mode": "dark",
-        "color_theme": "blue",
-        "bgs": ["#0d1520", "#0b1218", "#10181f", "#0e141c"],
-        "cards": ["#152535", "#132030", "#18283a", "#162332"],
-        "border": "#254055",
-        "text": "#b8c8d8",
-        "text_dim": "#5a7890",
-        "accent": "#50a0e0",
-    },
-    "forest": {
-        "name": "森林绿",
-        "mode": "dark",
-        "color_theme": "green",
-        "bgs": ["#161c16", "#141a14", "#181e18", "#151b15"],
-        "cards": ["#1e261e", "#1c241c", "#202820", "#1d251d"],
-        "border": "#2e402e",
-        "text": "#c0d0c0",
-        "text_dim": "#608060",
-        "accent": "#60a060",
-    },
-    "mocha": {
-        "name": "摩卡棕",
-        "mode": "dark",
-        "color_theme": "green",
-        "bgs": ["#1a1614", "#181412", "#1c1816", "#191513"],
-        "cards": ["#241e1a", "#221c18", "#26201c", "#231d19"],
-        "border": "#3a302a",
-        "text": "#d0c4b8",
-        "text_dim": "#887060",
-        "accent": "#c09070",
-    },
-    "slate": {
-        "name": "石板灰",
-        "mode": "dark",
-        "color_theme": "blue",
-        "bgs": ["#181c22", "#161a20", "#1a1e24", "#171b21"],
-        "cards": ["#22282f", "#20262d", "#242a32", "#21272e"],
-        "border": "#353d48",
-        "text": "#c5cdd8",
-        "text_dim": "#6a7585",
-        "accent": "#6090c0",
-    },
-    "rose": {
-        "name": "玫瑰粉",
-        "mode": "dark",
-        "color_theme": "blue",
-        "bgs": ["#1c181a", "#1a1618", "#1e1a1c", "#1b1719"],
-        "cards": ["#262022", "#241e20", "#282224", "#251f21"],
-        "border": "#3a3035",
-        "text": "#d8c8d0",
-        "text_dim": "#907080",
-        "accent": "#d080a0",
+        # 专业浅色配色
+        "bg_color": "#F8FAFC",      # 主背景
+        "card_color": "#FFFFFF",    # 卡片背景
+        "border": "#E2E8F0",        # 边框
+        "text": "#0F172A",          # 主文字
+        "text_dim": "#64748B",      # 次要文字
+        "accent": "#2563EB",        # 强调色（蓝）
     },
 }
 

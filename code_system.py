@@ -1,8 +1,8 @@
 """
 简化兑换码系统 - 两种套餐
 
-套餐一：生成提示词 + 跳转
-套餐二：生成提示词 + 跳转 + 打包
+套餐一：生成提示词
+套餐二：生成提示词 + 跳转 + 打包 + 视频解析
 """
 
 import json
@@ -25,7 +25,7 @@ LICENSE_FILE = DATA_DIR / "license.json"
 # 格式: "兑换码": "套餐类型(basic/pro)"
 # 这些兑换码会硬编码到程序里，打包给别人后可直接使用
 PRESET_CODES = {
-    # 基础版兑换码（提示词 + 跳转）
+    # 基础版兑换码（仅提示词）
     "BASIC-2024-ABCD-1234": "basic",
     "BASIC-2024-EFGH-5678": "basic",
     "BASIC-2024-IJKL-9012": "basic",
@@ -41,13 +41,13 @@ PRESET_CODES = {
 PACKAGES = {
     "basic": {
         "name": "基础版",
-        "features": ["prompt", "jump"],
-        "description": "生成提示词 + 复制跳转"
+        "features": ["prompt"],
+        "description": "生成提示词"
     },
     "pro": {
         "name": "专业版",
-        "features": ["prompt", "jump", "package"],
-        "description": "生成提示词 + 复制跳转 + PyInstaller打包"
+        "features": ["prompt", "jump", "package", "video_parser"],
+        "description": "生成提示词 + 复制跳转 + PyInstaller打包 + VIP视频解析"
     }
 }
 
@@ -55,7 +55,8 @@ PACKAGES = {
 FEATURES = {
     "prompt": "生成提示词",
     "jump": "复制跳转",
-    "package": "PyInstaller打包"
+    "package": "PyInstaller打包",
+    "video_parser": "VIP视频解析"
 }
 
 
