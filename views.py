@@ -156,6 +156,7 @@ class MainApp(ctk.CTk):
             model=self.settings.get("model", "claude-haiku-4-5-20251001"),
         )
         self.prompt_service = PromptGeneratorService(self.api_config)
+        self.ai_analyzer = AIPackageAnalyzer(self.api_config)
 
         # 状态变量
         self.current_prompt = ""
@@ -214,7 +215,7 @@ class MainApp(ctk.CTk):
         # 应用标题
         ctk.CTkLabel(
             center_container,
-            text="7OZP1K 编程助手",
+            text="7OZP1K 编程助手vx:AE86-1w",
             font=ctk.CTkFont(size=32, weight="bold", family="Microsoft YaHei UI"),
             text_color=(self.colors["text_light"], self.colors["text_dark"])
         ).pack(pady=(0, 10))
@@ -312,8 +313,8 @@ class MainApp(ctk.CTk):
         for widget in self.winfo_children():
             widget.destroy()
 
-        self.geometry("680x720")
-        self.minsize(680, 720)
+        self.geometry("680x800")
+        self.minsize(680, 800)
 
         # 背景容器
         container = ctk.CTkFrame(
@@ -331,7 +332,7 @@ class MainApp(ctk.CTk):
             border_width=1,
             border_color=(self.colors["border_light"], self.colors["border_dark"]),
             width=540,
-            height=650
+            height=720
         )
         main_card.place(relx=0.5, rely=0.5, anchor="center")
         main_card.pack_propagate(False)
@@ -693,8 +694,8 @@ class MainApp(ctk.CTk):
 
         ctk.CTkLabel(
             logo_circle,
-            text="7OZP1K",
-            font=ctk.CTkFont(size=7, weight="bold", family="Arial"),
+            text="7",
+            font=ctk.CTkFont(size=14, weight="bold", family="Arial"),
             text_color="white"
         ).place(relx=0.5, rely=0.5, anchor="center")
 
@@ -797,8 +798,7 @@ class MainApp(ctk.CTk):
             ("历史记录", "history"),
             ("生成结果", "output"),
             ("打包工具", "packager"),
-            ("视频解析", "video_parser"),
-            ("配置管理", "config"),
+            ("工具箱", "toolbox"),
         ]
 
         self.nav_buttons = {}
@@ -873,10 +873,6 @@ class MainApp(ctk.CTk):
         if nav_id in self.content_frames:
             self.content_frames[nav_id].grid(row=0, column=0, sticky="nsew")
 
-        # 特殊处理：视频解析页面需要检查权限
-        if nav_id == "video_parser":
-            self._check_video_parser_access()
-
         # 更新导航样式
         self._update_nav_styles()
 
@@ -906,14 +902,13 @@ class MainApp(ctk.CTk):
         self._build_history_content()
         self._build_output_content()
         self._build_packager_content()
-        self._build_video_parser_content()
-        self._build_config_content()
+        self._build_toolbox_content()
 
         # 显示默认页面
         self.content_frames["new_project"].grid(row=0, column=0, sticky="nsew")
 
     def _build_new_project_content(self):
-        """构建新建项目内容页"""
+        """构建新建项目内容页 - UI-UX-PRO-MAX 高级风格"""
         frame = ctk.CTkFrame(
             self.content_container,
             fg_color=(self.colors["bg_elevated"], self.colors["bg_elevated_dark"]),
@@ -927,16 +922,42 @@ class MainApp(ctk.CTk):
         frame.grid_columnconfigure(1, weight=1)
         frame.grid_rowconfigure(1, weight=1)
 
-        # 页面标题
+        # ============ 页面标题 - 渐变风格 ============
         header = ctk.CTkFrame(frame, fg_color="transparent")
         header.grid(row=0, column=0, columnspan=2, sticky="ew", padx=24, pady=(24, 16))
+        header.grid_columnconfigure(1, weight=1)
+
+        title_group = ctk.CTkFrame(header, fg_color="transparent")
+        title_group.grid(row=0, column=0, sticky="w")
 
         ctk.CTkLabel(
-            header,
+            title_group,
             text="创建新项目",
-            font=ctk.CTkFont(size=20, weight="bold", family="Microsoft YaHei UI"),
+            font=ctk.CTkFont(size=22, weight="bold", family="Microsoft YaHei UI"),
             text_color=(self.colors["text_primary"], self.colors["text_primary_dark"])
         ).pack(side="left")
+
+        # 状态徽章
+        self.project_status_badge = ctk.CTkLabel(
+            title_group,
+            text="就绪",
+            font=ctk.CTkFont(size=10, family="Microsoft YaHei UI"),
+            text_color="white",
+            fg_color=self.colors["success"],
+            corner_radius=10,
+            padx=10,
+            pady=2
+        )
+        self.project_status_badge.pack(side="left", padx=(12, 0))
+
+        # API 状态指示
+        self.api_status_label = ctk.CTkLabel(
+            header,
+            text="",
+            font=ctk.CTkFont(size=11, family="Microsoft YaHei UI"),
+            text_color=(self.colors["text_muted"], self.colors["text_muted_dark"])
+        )
+        self.api_status_label.grid(row=0, column=1, sticky="e")
 
         # 左侧 - 项目配置
         left_panel = ctk.CTkFrame(frame, fg_color="transparent")
@@ -944,136 +965,188 @@ class MainApp(ctk.CTk):
         left_panel.grid_columnconfigure(0, weight=1)
         left_panel.grid_rowconfigure(2, weight=1)
 
-        # 项目配置区
+        # ============ 项目配置区 - Bento Grid 风格 ============
         config_card = ctk.CTkFrame(
             left_panel,
             fg_color=(self.colors["bg_base"], self.colors["bg_base_dark"]),
-            corner_radius=10,
-            border_width=0
+            corner_radius=12,
+            border_width=1,
+            border_color=(self.colors["border"], self.colors["border_dark"])
         )
         config_card.grid(row=0, column=0, sticky="ew", pady=(0, 12))
         config_card.grid_columnconfigure(1, weight=1)
 
-        ctk.CTkLabel(
-            config_card,
-            text="项目配置",
-            font=ctk.CTkFont(size=14, weight="bold", family="Microsoft YaHei UI"),
-            text_color=(self.colors["text_primary"], self.colors["text_primary_dark"])
-        ).grid(row=0, column=0, columnspan=4, sticky="w", padx=16, pady=(16, 12))
+        # 配置标题带图标
+        config_header = ctk.CTkFrame(config_card, fg_color="transparent")
+        config_header.grid(row=0, column=0, columnspan=4, sticky="ew", padx=16, pady=(16, 12))
 
-        # 语言选择
         ctk.CTkLabel(
+            config_header,
+            text="⚙",
+            font=ctk.CTkFont(size=16),
+            text_color=self.colors["primary"]
+        ).pack(side="left")
+
+        ctk.CTkLabel(
+            config_header,
+            text="项目配置",
+            font=ctk.CTkFont(size=15, weight="bold", family="Microsoft YaHei UI"),
+            text_color=(self.colors["text_primary"], self.colors["text_primary_dark"])
+        ).pack(side="left", padx=(8, 0))
+
+        # 分隔线
+        ctk.CTkFrame(
             config_card,
+            height=1,
+            fg_color=(self.colors["border"], self.colors["border_dark"])
+        ).grid(row=1, column=0, columnspan=4, sticky="ew", padx=16, pady=(0, 12))
+
+        # ====== 语言选择行 - 紧凑布局 ======
+        lang_row = ctk.CTkFrame(config_card, fg_color="transparent")
+        lang_row.grid(row=2, column=0, columnspan=4, sticky="ew", padx=16, pady=(0, 8))
+
+        ctk.CTkLabel(
+            lang_row,
             text="编程语言",
-            font=ctk.CTkFont(size=12, family="Microsoft YaHei UI"),
+            font=ctk.CTkFont(size=12, weight="bold", family="Microsoft YaHei UI"),
             text_color=(self.colors["text_secondary"], self.colors["text_secondary_dark"])
-        ).grid(row=1, column=0, sticky="w", padx=16, pady=8)
+        ).pack(side="left")
+
+        # 语言图标芯片
+        self.lang_icon_label = ctk.CTkLabel(
+            lang_row,
+            text="Py",
+            font=ctk.CTkFont(size=12, weight="bold"),
+            text_color="white",
+            fg_color=self.colors["primary"],
+            corner_radius=6,
+            width=32,
+            height=32
+        )
+        self.lang_icon_label.pack(side="left", padx=(12, 6))
 
         self.language_var = ctk.StringVar(value=self.settings.get("last_language", "Python"))
         self.language_menu = ctk.CTkOptionMenu(
-            config_card,
+            lang_row,
             values=list(LANGUAGE_FRAMEWORKS.keys()),
             variable=self.language_var,
             command=self._on_language_changed,
-            width=140,
-            height=36,
-            corner_radius=6,
+            width=130,
+            height=34,
+            corner_radius=8,
             fg_color=(self.colors["bg_elevated"], self.colors["bg_elevated_dark"]),
-            button_color=(self.colors["bg_elevated"], self.colors["bg_elevated_dark"]),
-            button_hover_color=(self.colors["bg_hover"], self.colors["bg_hover_dark"]),
-            font=ctk.CTkFont(size=12, family="Microsoft YaHei UI")
+            button_color=self.colors["primary"],
+            button_hover_color=self.colors["primary_hover"],
+            dropdown_fg_color=(self.colors["bg_base"], self.colors["bg_base_dark"]),
+            dropdown_hover_color=(self.colors["bg_hover"], self.colors["bg_hover_dark"]),
+            font=ctk.CTkFont(size=12, weight="bold", family="Microsoft YaHei UI")
         )
-        self.language_menu.grid(row=1, column=1, sticky="w", padx=8, pady=8)
+        self.language_menu.pack(side="left")
 
-        # 语言图标
-        self.lang_icon_label = ctk.CTkLabel(
-            config_card,
-            text="Py",
-            font=ctk.CTkFont(size=14, weight="bold"),
-            text_color=(self.colors["primary"], self.colors["primary_light"])
-        )
-        self.lang_icon_label.grid(row=1, column=2, sticky="w", padx=8)
+        # ====== 框架选择行 ======
+        fw_row = ctk.CTkFrame(config_card, fg_color="transparent")
+        fw_row.grid(row=3, column=0, columnspan=4, sticky="ew", padx=16, pady=8)
+        fw_row.grid_columnconfigure(1, weight=1)
+        fw_row.grid_columnconfigure(3, weight=1)
 
-        # 框架类别
         ctk.CTkLabel(
-            config_card,
+            fw_row,
             text="框架类别",
-            font=ctk.CTkFont(size=12, family="Microsoft YaHei UI"),
+            font=ctk.CTkFont(size=12, weight="bold", family="Microsoft YaHei UI"),
             text_color=(self.colors["text_secondary"], self.colors["text_secondary_dark"])
-        ).grid(row=2, column=0, sticky="w", padx=16, pady=8)
+        ).grid(row=0, column=0, sticky="w")
 
         self.category_var = ctk.StringVar()
         self.category_menu = ctk.CTkOptionMenu(
-            config_card,
+            fw_row,
             values=[""],
             variable=self.category_var,
             command=self._on_category_changed,
             width=140,
             height=36,
-            corner_radius=6,
+            corner_radius=8,
             fg_color=(self.colors["bg_elevated"], self.colors["bg_elevated_dark"]),
-            button_color=(self.colors["bg_elevated"], self.colors["bg_elevated_dark"]),
-            button_hover_color=(self.colors["bg_hover"], self.colors["bg_hover_dark"]),
+            button_color=(self.colors["bg_hover"], self.colors["bg_hover_dark"]),
+            button_hover_color=self.colors["primary"],
+            dropdown_fg_color=(self.colors["bg_base"], self.colors["bg_base_dark"]),
+            dropdown_hover_color=(self.colors["bg_hover"], self.colors["bg_hover_dark"]),
             font=ctk.CTkFont(size=12, family="Microsoft YaHei UI")
         )
-        self.category_menu.grid(row=2, column=1, sticky="w", padx=8, pady=8)
+        self.category_menu.grid(row=0, column=1, sticky="w", padx=(12, 24))
 
-        # 具体框架
         ctk.CTkLabel(
-            config_card,
+            fw_row,
             text="具体框架",
-            font=ctk.CTkFont(size=12, family="Microsoft YaHei UI"),
+            font=ctk.CTkFont(size=12, weight="bold", family="Microsoft YaHei UI"),
             text_color=(self.colors["text_secondary"], self.colors["text_secondary_dark"])
-        ).grid(row=2, column=2, sticky="w", padx=16, pady=8)
+        ).grid(row=0, column=2, sticky="w")
 
         self.framework_var = ctk.StringVar()
         self.framework_menu = ctk.CTkOptionMenu(
-            config_card,
+            fw_row,
             values=[""],
             variable=self.framework_var,
             width=140,
             height=36,
-            corner_radius=6,
+            corner_radius=8,
             fg_color=(self.colors["bg_elevated"], self.colors["bg_elevated_dark"]),
-            button_color=(self.colors["bg_elevated"], self.colors["bg_elevated_dark"]),
-            button_hover_color=(self.colors["bg_hover"], self.colors["bg_hover_dark"]),
+            button_color=(self.colors["bg_hover"], self.colors["bg_hover_dark"]),
+            button_hover_color=self.colors["primary"],
+            dropdown_fg_color=(self.colors["bg_base"], self.colors["bg_base_dark"]),
+            dropdown_hover_color=(self.colors["bg_hover"], self.colors["bg_hover_dark"]),
             font=ctk.CTkFont(size=12, family="Microsoft YaHei UI")
         )
-        self.framework_menu.grid(row=2, column=3, sticky="w", padx=8, pady=8)
+        self.framework_menu.grid(row=0, column=3, sticky="w", padx=(12, 0))
 
-        # 开发优先级
+        # ====== 开发优先级 - 芯片式选择 ======
+        priority_row = ctk.CTkFrame(config_card, fg_color="transparent")
+        priority_row.grid(row=4, column=0, columnspan=4, sticky="ew", padx=16, pady=(8, 16))
+
         ctk.CTkLabel(
-            config_card,
+            priority_row,
             text="开发优先级",
-            font=ctk.CTkFont(size=12, family="Microsoft YaHei UI"),
+            font=ctk.CTkFont(size=12, weight="bold", family="Microsoft YaHei UI"),
             text_color=(self.colors["text_secondary"], self.colors["text_secondary_dark"])
-        ).grid(row=3, column=0, sticky="w", padx=16, pady=8)
+        ).pack(side="left")
 
-        priority_frame = ctk.CTkFrame(config_card, fg_color="transparent")
-        priority_frame.grid(row=3, column=1, columnspan=3, sticky="w", padx=8, pady=(8, 16))
+        priority_chips = ctk.CTkFrame(priority_row, fg_color="transparent")
+        priority_chips.pack(side="right")
 
         self.priority_var = ctk.StringVar(value="功能完整")
-        priorities = ["快速原型", "功能完整", "生产就绪", "最佳实践"]
-        for p in priorities:
-            ctk.CTkRadioButton(
-                priority_frame,
-                text=p,
-                variable=self.priority_var,
-                value=p,
+        priorities = [
+            ("快速原型", "⚡"),
+            ("功能完整", "✓"),
+            ("生产就绪", "🚀"),
+            ("最佳实践", "⭐")
+        ]
+
+        self.priority_buttons = {}
+        for p_text, p_icon in priorities:
+            btn = ctk.CTkButton(
+                priority_chips,
+                text=f"{p_icon} {p_text}",
                 font=ctk.CTkFont(size=11, family="Microsoft YaHei UI"),
-                fg_color=self.colors["primary"],
-                hover_color=self.colors["primary_hover"]
-            ).pack(side="left", padx=8)
+                height=30,
+                width=90,
+                corner_radius=15,
+                fg_color=(self.colors["bg_hover"], self.colors["bg_hover_dark"]) if p_text != "功能完整" else self.colors["primary"],
+                hover_color=self.colors["primary_hover"],
+                text_color=(self.colors["text_secondary"], self.colors["text_secondary_dark"]) if p_text != "功能完整" else "white",
+                command=lambda t=p_text: self._select_priority(t)
+            )
+            btn.pack(side="left", padx=3)
+            self.priority_buttons[p_text] = btn
 
         # 初始化框架选项
         self._on_language_changed(self.language_var.get())
 
-        # 文件上传区
+        # ============ 文件上传区 - 虚线边框风格 ============
         upload_card = ctk.CTkFrame(
             left_panel,
             fg_color=(self.colors["bg_base"], self.colors["bg_base_dark"]),
-            corner_radius=10,
-            border_width=0
+            corner_radius=12,
+            border_width=1,
+            border_color=(self.colors["border"], self.colors["border_dark"])
         )
         upload_card.grid(row=1, column=0, sticky="ew", pady=(0, 12))
         upload_card.grid_columnconfigure(0, weight=1)
@@ -1083,25 +1156,33 @@ class MainApp(ctk.CTk):
 
         ctk.CTkLabel(
             upload_header,
-            text="附加文件 (可选)",
-            font=ctk.CTkFont(size=14, weight="bold", family="Microsoft YaHei UI"),
-            text_color=(self.colors["text_primary"], self.colors["text_primary_dark"])
+            text="📎",
+            font=ctk.CTkFont(size=14)
         ).pack(side="left")
 
-        ctk.CTkButton(
+        ctk.CTkLabel(
             upload_header,
-            text="选择文件",
-            font=ctk.CTkFont(size=11, family="Microsoft YaHei UI"),
-            width=80,
-            height=28,
-            corner_radius=6,
-            fg_color=self.colors["primary"],
-            hover_color=self.colors["primary_hover"],
-            command=self._select_files,
-        ).pack(side="right", padx=(8, 0))
+            text="附加文件",
+            font=ctk.CTkFont(size=14, weight="bold", family="Microsoft YaHei UI"),
+            text_color=(self.colors["text_primary"], self.colors["text_primary_dark"])
+        ).pack(side="left", padx=(6, 0))
+
+        ctk.CTkLabel(
+            upload_header,
+            text="可选",
+            font=ctk.CTkFont(size=10, family="Microsoft YaHei UI"),
+            text_color=(self.colors["text_muted"], self.colors["text_muted_dark"]),
+            fg_color=(self.colors["bg_hover"], self.colors["bg_hover_dark"]),
+            corner_radius=4,
+            padx=6,
+            pady=1
+        ).pack(side="left", padx=(8, 0))
+
+        btn_group = ctk.CTkFrame(upload_header, fg_color="transparent")
+        btn_group.pack(side="right")
 
         ctk.CTkButton(
-            upload_header,
+            btn_group,
             text="清空",
             font=ctk.CTkFont(size=11, family="Microsoft YaHei UI"),
             width=60,
@@ -1109,39 +1190,58 @@ class MainApp(ctk.CTk):
             corner_radius=6,
             fg_color="transparent",
             hover_color=(self.colors["bg_hover"], self.colors["bg_hover_dark"]),
-            text_color=(self.colors["text_secondary"], self.colors["text_secondary_dark"]),
-            border_width=1,
-            border_color=(self.colors["border"], self.colors["border_dark"]),
+            text_color=(self.colors["text_muted"], self.colors["text_muted_dark"]),
             command=self._clear_files,
-        ).pack(side="right")
+        ).pack(side="left", padx=(0, 6))
 
-        # 拖拽区域
+        ctk.CTkButton(
+            btn_group,
+            text="选择文件",
+            font=ctk.CTkFont(size=11, family="Microsoft YaHei UI"),
+            width=85,
+            height=28,
+            corner_radius=6,
+            fg_color=self.colors["primary"],
+            hover_color=self.colors["primary_hover"],
+            command=self._select_files,
+        ).pack(side="left")
+
+        # 拖拽区域 - 虚线效果
         self.drop_frame = ctk.CTkFrame(
             upload_card,
-            height=60,
+            height=70,
             fg_color=(self.colors["bg_hover"], self.colors["bg_hover_dark"]),
-            corner_radius=8,
-            border_width=1,
+            corner_radius=10,
+            border_width=2,
             border_color=(self.colors["border"], self.colors["border_dark"]),
         )
         self.drop_frame.grid(row=1, column=0, sticky="ew", padx=16, pady=(0, 8))
         self.drop_frame.grid_propagate(False)
 
+        drop_content = ctk.CTkFrame(self.drop_frame, fg_color="transparent")
+        drop_content.place(relx=0.5, rely=0.5, anchor="center")
+
+        ctk.CTkLabel(
+            drop_content,
+            text="📂",
+            font=ctk.CTkFont(size=20)
+        ).pack()
+
         self.drop_label = ctk.CTkLabel(
-            self.drop_frame,
+            drop_content,
             text="点击选择或拖拽文件到此处",
             font=ctk.CTkFont(size=11, family="Microsoft YaHei UI"),
             text_color=(self.colors["text_muted"], self.colors["text_muted_dark"]),
         )
-        self.drop_label.place(relx=0.5, rely=0.5, anchor="center")
+        self.drop_label.pack()
 
         self.drop_frame.bind("<Button-1>", lambda e: self._select_files())
-        self.drop_label.bind("<Button-1>", lambda e: self._select_files())
+        drop_content.bind("<Button-1>", lambda e: self._select_files())
 
         # 文件列表
         self.files_listbox = ctk.CTkTextbox(
             upload_card,
-            height=50,
+            height=45,
             font=ctk.CTkFont(size=10, family="Consolas"),
             fg_color=(self.colors["bg_elevated"], self.colors["bg_elevated_dark"]),
             corner_radius=6
@@ -1153,12 +1253,13 @@ class MainApp(ctk.CTk):
         # 尝试启用拖拽功能
         self._setup_drag_drop()
 
-        # 项目描述区
+        # ============ 项目描述区 - 带智能提示 ============
         desc_card = ctk.CTkFrame(
             left_panel,
             fg_color=(self.colors["bg_base"], self.colors["bg_base_dark"]),
-            corner_radius=10,
-            border_width=0
+            corner_radius=12,
+            border_width=1,
+            border_color=(self.colors["border"], self.colors["border_dark"])
         )
         desc_card.grid(row=2, column=0, sticky="nsew")
         desc_card.grid_columnconfigure(0, weight=1)
@@ -1169,57 +1270,91 @@ class MainApp(ctk.CTk):
 
         ctk.CTkLabel(
             desc_header,
+            text="✏",
+            font=ctk.CTkFont(size=14)
+        ).pack(side="left")
+
+        ctk.CTkLabel(
+            desc_header,
             text="项目描述",
             font=ctk.CTkFont(size=14, weight="bold", family="Microsoft YaHei UI"),
             text_color=(self.colors["text_primary"], self.colors["text_primary_dark"])
-        ).pack(side="left")
+        ).pack(side="left", padx=(6, 0))
 
         self.char_count_label = ctk.CTkLabel(
             desc_header,
             text="0 字",
-            font=ctk.CTkFont(size=11, family="Microsoft YaHei UI"),
+            font=ctk.CTkFont(size=10, family="Microsoft YaHei UI"),
             text_color=(self.colors["text_muted"], self.colors["text_muted_dark"]),
+            fg_color=(self.colors["bg_hover"], self.colors["bg_hover_dark"]),
+            corner_radius=4,
+            padx=8,
+            pady=2
         )
         self.char_count_label.pack(side="right")
 
+        # AI优化按钮 - 渐变效果
+        self.optimize_btn = ctk.CTkButton(
+            desc_header,
+            text="✨ AI优化",
+            font=ctk.CTkFont(size=11, weight="bold", family="Microsoft YaHei UI"),
+            width=85,
+            height=28,
+            corner_radius=14,
+            fg_color=self.colors["accent"],
+            hover_color=self.colors["accent_hover"],
+            command=self._optimize_input,
+        )
+        self.optimize_btn.pack(side="right", padx=(0, 12))
+
         self.idea_textbox = ctk.CTkTextbox(
             desc_card,
-            font=ctk.CTkFont(size=12, family="Microsoft YaHei UI"),
+            font=ctk.CTkFont(size=13, family="Microsoft YaHei UI"),
             wrap="word",
             fg_color=(self.colors["bg_elevated"], self.colors["bg_elevated_dark"]),
-            corner_radius=6
+            corner_radius=8
         )
         self.idea_textbox.grid(row=1, column=0, sticky="nsew", padx=16, pady=(0, 16))
         self.idea_textbox.bind("<KeyRelease>", self._update_char_count)
 
-        # 右侧 - 操作区
+        # ============ 右侧 - 操作区 ============
         right_panel = ctk.CTkFrame(frame, fg_color="transparent")
         right_panel.grid(row=1, column=1, sticky="nsew", padx=(12, 24), pady=(0, 24))
         right_panel.grid_columnconfigure(0, weight=1)
         right_panel.grid_rowconfigure(1, weight=1)
 
-        # 生成按钮区
+        # ====== 生成按钮区 - 突出显示 ======
         action_card = ctk.CTkFrame(
             right_panel,
             fg_color=(self.colors["bg_base"], self.colors["bg_base_dark"]),
-            corner_radius=10,
-            border_width=0
+            corner_radius=12,
+            border_width=1,
+            border_color=(self.colors["border"], self.colors["border_dark"])
         )
         action_card.grid(row=0, column=0, sticky="ew", pady=(0, 12))
 
+        action_header = ctk.CTkFrame(action_card, fg_color="transparent")
+        action_header.pack(fill="x", padx=16, pady=(16, 12))
+
         ctk.CTkLabel(
-            action_card,
+            action_header,
+            text="🚀",
+            font=ctk.CTkFont(size=16)
+        ).pack(side="left")
+
+        ctk.CTkLabel(
+            action_header,
             text="生成提示词",
-            font=ctk.CTkFont(size=14, weight="bold", family="Microsoft YaHei UI"),
+            font=ctk.CTkFont(size=15, weight="bold", family="Microsoft YaHei UI"),
             text_color=(self.colors["text_primary"], self.colors["text_primary_dark"])
-        ).pack(anchor="w", padx=16, pady=(16, 12))
+        ).pack(side="left", padx=(8, 0))
 
         self.generate_btn = ctk.CTkButton(
             action_card,
-            text="生成提示词",
+            text="开始生成",
             font=ctk.CTkFont(size=14, weight="bold", family="Microsoft YaHei UI"),
-            height=44,
-            corner_radius=8,
+            height=48,
+            corner_radius=10,
             fg_color=self.colors["primary"],
             hover_color=self.colors["primary_hover"],
             command=self._generate_prompt,
@@ -1234,49 +1369,103 @@ class MainApp(ctk.CTk):
         )
         self.progress_label.pack(anchor="w", padx=16, pady=(0, 16))
 
-        # 快捷操作卡片
+        # ====== 快捷操作卡片 - 图标卡片风格 ======
         quick_card = ctk.CTkFrame(
             right_panel,
             fg_color=(self.colors["bg_base"], self.colors["bg_base_dark"]),
-            corner_radius=10,
-            border_width=0
+            corner_radius=12,
+            border_width=1,
+            border_color=(self.colors["border"], self.colors["border_dark"])
         )
         quick_card.grid(row=1, column=0, sticky="nsew")
         quick_card.grid_columnconfigure(0, weight=1)
 
+        quick_header = ctk.CTkFrame(quick_card, fg_color="transparent")
+        quick_header.pack(fill="x", padx=16, pady=(16, 12))
+
         ctk.CTkLabel(
-            quick_card,
+            quick_header,
+            text="⚡",
+            font=ctk.CTkFont(size=14)
+        ).pack(side="left")
+
+        ctk.CTkLabel(
+            quick_header,
             text="快捷操作",
             font=ctk.CTkFont(size=14, weight="bold", family="Microsoft YaHei UI"),
             text_color=(self.colors["text_primary"], self.colors["text_primary_dark"])
-        ).pack(anchor="w", padx=16, pady=(16, 12))
+        ).pack(side="left", padx=(6, 0))
 
+        # 快捷操作按钮 - 带图标
         quick_actions = [
-            ("查看模板库", lambda: self._switch_content("templates")),
-            ("查看历史记录", lambda: self._switch_content("history")),
-            ("打开设置", self._show_settings),
+            ("📚", "模板库", lambda: self._switch_content("templates")),
+            ("📜", "历史记录", lambda: self._switch_content("history")),
+            ("⚙", "打开设置", self._show_settings),
+            ("🛠", "工具箱", lambda: self._switch_content("toolbox")),
         ]
 
-        for text, cmd in quick_actions:
-            ctk.CTkButton(
-                quick_card,
-                text=text,
-                font=ctk.CTkFont(size=12, family="Microsoft YaHei UI"),
-                height=36,
-                corner_radius=6,
+        for icon, text, cmd in quick_actions:
+            btn_frame = ctk.CTkFrame(quick_card, fg_color="transparent")
+            btn_frame.pack(fill="x", padx=16, pady=3)
+
+            btn = ctk.CTkButton(
+                btn_frame,
+                text="",
+                width=0,
+                height=40,
+                corner_radius=8,
                 fg_color="transparent",
                 hover_color=(self.colors["bg_hover"], self.colors["bg_hover_dark"]),
-                text_color=(self.colors["text_secondary"], self.colors["text_secondary_dark"]),
                 border_width=1,
                 border_color=(self.colors["border"], self.colors["border_dark"]),
-                anchor="w",
                 command=cmd,
-            ).pack(fill="x", padx=16, pady=4)
+            )
+            btn.pack(fill="x")
+
+            # 内部布局
+            inner = ctk.CTkFrame(btn, fg_color="transparent")
+            inner.place(relx=0.02, rely=0.5, anchor="w")
+
+            ctk.CTkLabel(
+                inner,
+                text=icon,
+                font=ctk.CTkFont(size=14)
+            ).pack(side="left", padx=(8, 0))
+
+            ctk.CTkLabel(
+                inner,
+                text=text,
+                font=ctk.CTkFont(size=12, family="Microsoft YaHei UI"),
+                text_color=(self.colors["text_secondary"], self.colors["text_secondary_dark"])
+            ).pack(side="left", padx=(10, 0))
+
+            # 箭头指示
+            ctk.CTkLabel(
+                btn,
+                text="›",
+                font=ctk.CTkFont(size=16),
+                text_color=(self.colors["text_muted"], self.colors["text_muted_dark"])
+            ).place(relx=0.95, rely=0.5, anchor="e")
 
         ctk.CTkFrame(quick_card, fg_color="transparent", height=16).pack()
 
+    def _select_priority(self, priority: str):
+        """选择开发优先级 - 更新芯片按钮样式"""
+        self.priority_var.set(priority)
+        for p_text, btn in self.priority_buttons.items():
+            if p_text == priority:
+                btn.configure(
+                    fg_color=self.colors["primary"],
+                    text_color="white"
+                )
+            else:
+                btn.configure(
+                    fg_color=(self.colors["bg_hover"], self.colors["bg_hover_dark"]),
+                    text_color=(self.colors["text_secondary"], self.colors["text_secondary_dark"])
+                )
+
     def _build_templates_content(self):
-        """构建模板库内容页"""
+        """构建模板库内容页 - UI-UX-PRO-MAX 高级风格"""
         frame = ctk.CTkFrame(
             self.content_container,
             fg_color=(self.colors["bg_elevated"], self.colors["bg_elevated_dark"]),
@@ -1289,45 +1478,72 @@ class MainApp(ctk.CTk):
         frame.grid_columnconfigure(0, weight=1)
         frame.grid_rowconfigure(1, weight=1)
 
-        # 页面标题
+        # 页面标题 - 带徽章
         header = ctk.CTkFrame(frame, fg_color="transparent")
         header.grid(row=0, column=0, sticky="ew", padx=24, pady=(24, 16))
+        header.grid_columnconfigure(1, weight=1)
+
+        title_group = ctk.CTkFrame(header, fg_color="transparent")
+        title_group.grid(row=0, column=0, sticky="w")
 
         ctk.CTkLabel(
-            header,
-            text="模板库",
-            font=ctk.CTkFont(size=20, weight="bold", family="Microsoft YaHei UI"),
-            text_color=(self.colors["text_primary"], self.colors["text_primary_dark"])
+            title_group,
+            text="📚",
+            font=ctk.CTkFont(size=20)
         ).pack(side="left")
 
-        ctk.CTkButton(
-            header,
-            text="添加模板",
-            font=ctk.CTkFont(size=12, family="Microsoft YaHei UI"),
-            width=100,
-            height=32,
-            corner_radius=6,
+        ctk.CTkLabel(
+            title_group,
+            text="模板库",
+            font=ctk.CTkFont(size=22, weight="bold", family="Microsoft YaHei UI"),
+            text_color=(self.colors["text_primary"], self.colors["text_primary_dark"])
+        ).pack(side="left", padx=(10, 0))
+
+        # 模板数量徽章
+        self.template_count_badge = ctk.CTkLabel(
+            title_group,
+            text="0 个模板",
+            font=ctk.CTkFont(size=10, family="Microsoft YaHei UI"),
+            text_color="white",
             fg_color=self.colors["primary"],
-            hover_color=self.colors["primary_hover"],
-            command=self._add_template_dialog,
-        ).pack(side="right", padx=(8, 0))
+            corner_radius=10,
+            padx=10,
+            pady=2
+        )
+        self.template_count_badge.pack(side="left", padx=(12, 0))
+
+        # 操作按钮组
+        btn_group = ctk.CTkFrame(header, fg_color="transparent")
+        btn_group.grid(row=0, column=1, sticky="e")
 
         ctk.CTkButton(
-            header,
-            text="刷新",
+            btn_group,
+            text="🔄 刷新",
             font=ctk.CTkFont(size=12, family="Microsoft YaHei UI"),
-            width=70,
-            height=32,
-            corner_radius=6,
+            width=80,
+            height=34,
+            corner_radius=8,
             fg_color="transparent",
             hover_color=(self.colors["bg_hover"], self.colors["bg_hover_dark"]),
             text_color=(self.colors["text_secondary"], self.colors["text_secondary_dark"]),
             border_width=1,
             border_color=(self.colors["border"], self.colors["border_dark"]),
             command=self._refresh_templates,
-        ).pack(side="right")
+        ).pack(side="left", padx=(0, 8))
 
-        # 模板列表
+        ctk.CTkButton(
+            btn_group,
+            text="➕ 添加模板",
+            font=ctk.CTkFont(size=12, weight="bold", family="Microsoft YaHei UI"),
+            width=110,
+            height=34,
+            corner_radius=8,
+            fg_color=self.colors["primary"],
+            hover_color=self.colors["primary_hover"],
+            command=self._add_template_dialog,
+        ).pack(side="left")
+
+        # 模板列表容器 - 带空状态提示
         self.templates_scroll_frame = ctk.CTkScrollableFrame(
             frame,
             fg_color="transparent",
@@ -1339,7 +1555,7 @@ class MainApp(ctk.CTk):
         self._refresh_templates()
 
     def _build_history_content(self):
-        """构建历史记录内容页"""
+        """构建历史记录内容页 - UI-UX-PRO-MAX 高级风格"""
         frame = ctk.CTkFrame(
             self.content_container,
             fg_color=(self.colors["bg_elevated"], self.colors["bg_elevated_dark"]),
@@ -1352,45 +1568,72 @@ class MainApp(ctk.CTk):
         frame.grid_columnconfigure(0, weight=1)
         frame.grid_rowconfigure(1, weight=1)
 
-        # 页面标题
+        # 页面标题 - 带徽章
         header = ctk.CTkFrame(frame, fg_color="transparent")
         header.grid(row=0, column=0, sticky="ew", padx=24, pady=(24, 16))
+        header.grid_columnconfigure(1, weight=1)
+
+        title_group = ctk.CTkFrame(header, fg_color="transparent")
+        title_group.grid(row=0, column=0, sticky="w")
 
         ctk.CTkLabel(
-            header,
-            text="历史记录",
-            font=ctk.CTkFont(size=20, weight="bold", family="Microsoft YaHei UI"),
-            text_color=(self.colors["text_primary"], self.colors["text_primary_dark"])
+            title_group,
+            text="📜",
+            font=ctk.CTkFont(size=20)
         ).pack(side="left")
 
-        ctk.CTkButton(
-            header,
-            text="清空全部",
-            font=ctk.CTkFont(size=12, family="Microsoft YaHei UI"),
-            width=90,
-            height=32,
-            corner_radius=6,
-            fg_color=self.colors["error"],
-            hover_color="#DC2626",
-            command=self._clear_history,
-        ).pack(side="right", padx=(8, 0))
+        ctk.CTkLabel(
+            title_group,
+            text="历史记录",
+            font=ctk.CTkFont(size=22, weight="bold", family="Microsoft YaHei UI"),
+            text_color=(self.colors["text_primary"], self.colors["text_primary_dark"])
+        ).pack(side="left", padx=(10, 0))
+
+        # 记录数量徽章
+        self.history_count_badge = ctk.CTkLabel(
+            title_group,
+            text="0 条记录",
+            font=ctk.CTkFont(size=10, family="Microsoft YaHei UI"),
+            text_color="white",
+            fg_color=self.colors["accent"],
+            corner_radius=10,
+            padx=10,
+            pady=2
+        )
+        self.history_count_badge.pack(side="left", padx=(12, 0))
+
+        # 操作按钮组
+        btn_group = ctk.CTkFrame(header, fg_color="transparent")
+        btn_group.grid(row=0, column=1, sticky="e")
 
         ctk.CTkButton(
-            header,
-            text="刷新",
+            btn_group,
+            text="🔄 刷新",
             font=ctk.CTkFont(size=12, family="Microsoft YaHei UI"),
-            width=70,
-            height=32,
-            corner_radius=6,
+            width=80,
+            height=34,
+            corner_radius=8,
             fg_color="transparent",
             hover_color=(self.colors["bg_hover"], self.colors["bg_hover_dark"]),
             text_color=(self.colors["text_secondary"], self.colors["text_secondary_dark"]),
             border_width=1,
             border_color=(self.colors["border"], self.colors["border_dark"]),
             command=self._refresh_history,
-        ).pack(side="right")
+        ).pack(side="left", padx=(0, 8))
 
-        # 历史列表
+        ctk.CTkButton(
+            btn_group,
+            text="🗑 清空全部",
+            font=ctk.CTkFont(size=12, family="Microsoft YaHei UI"),
+            width=100,
+            height=34,
+            corner_radius=8,
+            fg_color=self.colors["error"],
+            hover_color="#DC2626",
+            command=self._clear_history,
+        ).pack(side="left")
+
+        # 历史列表容器
         self.history_frame = ctk.CTkScrollableFrame(
             frame,
             fg_color="transparent",
@@ -1690,8 +1933,9 @@ class MainApp(ctk.CTk):
         # 检查 PyInstaller 状态
         self._check_pyinstaller()
 
-    def _build_video_parser_content(self):
-        """构建视频解析内容页 - PRO专属功能"""
+    def _build_toolbox_content(self):
+        """构建工具箱内容页 - Bento Grid 高级风格"""
+        # 主框架
         frame = ctk.CTkFrame(
             self.content_container,
             fg_color=(self.colors["bg_elevated"], self.colors["bg_elevated_dark"]),
@@ -1699,332 +1943,841 @@ class MainApp(ctk.CTk):
             border_width=1,
             border_color=(self.colors["border"], self.colors["border_dark"])
         )
-        self.content_frames["video_parser"] = frame
-
+        self.content_frames["toolbox"] = frame
         frame.grid_columnconfigure(0, weight=1)
-        frame.grid_rowconfigure(2, weight=1)
+        frame.grid_rowconfigure(1, weight=1)
 
-        # 页面标题
+        # ============ 顶部导航栏 ============
         header = ctk.CTkFrame(frame, fg_color="transparent")
-        header.grid(row=0, column=0, sticky="ew", padx=24, pady=(24, 16))
+        header.grid(row=0, column=0, sticky="ew", padx=24, pady=(20, 12))
         header.grid_columnconfigure(1, weight=1)
 
+        # 标题
+        title_frame = ctk.CTkFrame(header, fg_color="transparent")
+        title_frame.grid(row=0, column=0, sticky="w")
+
         ctk.CTkLabel(
-            header,
-            text="VIP视频解析",
-            font=ctk.CTkFont(size=20, weight="bold", family="Microsoft YaHei UI"),
+            title_frame,
+            text="工具箱",
+            font=ctk.CTkFont(size=22, weight="bold", family="Microsoft YaHei UI"),
             text_color=(self.colors["text_primary"], self.colors["text_primary_dark"])
-        ).grid(row=0, column=0, sticky="w")
+        ).pack(side="left")
 
-        # PRO标签
-        ctk.CTkLabel(
-            header,
-            text="PRO",
-            font=ctk.CTkFont(size=10, weight="bold", family="Microsoft YaHei UI"),
-            text_color="white",
-            fg_color=self.colors["accent"],
-            corner_radius=4,
-            width=40,
-            height=20
-        ).grid(row=0, column=1, sticky="w", padx=12)
-
-        ctk.CTkLabel(
-            header,
-            text="支持腾讯/爱奇艺/优酷/B站/芒果TV等平台",
-            font=ctk.CTkFont(size=11, family="Microsoft YaHei UI"),
-            text_color=(self.colors["text_muted"], self.colors["text_muted_dark"])
-        ).grid(row=1, column=0, columnspan=2, sticky="w", pady=(4, 0))
-
-        # 主内容区
-        self.video_parser_container = ctk.CTkFrame(frame, fg_color="transparent")
-        self.video_parser_container.grid(row=1, column=0, sticky="nsew", padx=24, pady=(0, 24))
-        self.video_parser_container.grid_columnconfigure(0, weight=1)
-        self.video_parser_container.grid_rowconfigure(3, weight=1)
-
-        # 解锁检查容器 (初始显示)
-        self.video_unlock_frame = ctk.CTkFrame(
-            self.video_parser_container,
-            fg_color=(self.colors["bg_base"], self.colors["bg_base_dark"]),
-            corner_radius=10
-        )
-        self.video_unlock_frame.grid(row=0, column=0, sticky="nsew", rowspan=4)
-        self.video_unlock_frame.grid_columnconfigure(0, weight=1)
-
-        unlock_content = ctk.CTkFrame(self.video_unlock_frame, fg_color="transparent")
-        unlock_content.place(relx=0.5, rely=0.4, anchor="center")
-
-        ctk.CTkLabel(
-            unlock_content,
-            text="PRO专属功能",
-            font=ctk.CTkFont(size=18, weight="bold", family="Microsoft YaHei UI"),
-            text_color=(self.colors["text_primary"], self.colors["text_primary_dark"])
-        ).pack(pady=(0, 8))
-
-        ctk.CTkLabel(
-            unlock_content,
-            text="使用PRO兑换码解锁此功能",
-            font=ctk.CTkFont(size=12, family="Microsoft YaHei UI"),
-            text_color=(self.colors["text_muted"], self.colors["text_muted_dark"])
-        ).pack(pady=(0, 16))
-
-        ctk.CTkButton(
-            unlock_content,
-            text="前往配置管理",
-            font=ctk.CTkFont(size=12, family="Microsoft YaHei UI"),
-            width=140,
-            height=36,
-            corner_radius=6,
-            fg_color=self.colors["primary"],
-            hover_color=self.colors["primary_hover"],
-            command=lambda: self._switch_content("config"),
-        ).pack()
-
-        # 实际功能内容 (PRO解锁后显示)
-        self.video_content_frame = ctk.CTkFrame(
-            self.video_parser_container,
-            fg_color="transparent"
-        )
-        self.video_content_frame.grid_columnconfigure(0, weight=1)
-
-        # URL输入区
-        input_frame = ctk.CTkFrame(self.video_content_frame, fg_color="transparent")
-        input_frame.grid(row=0, column=0, sticky="ew", pady=(0, 16))
-        input_frame.grid_columnconfigure(0, weight=1)
-
-        self.video_url_entry = ctk.CTkEntry(
-            input_frame,
-            placeholder_text="粘贴视频链接 (支持腾讯/爱奇艺/优酷/B站/芒果TV等)",
-            height=44,
-            corner_radius=6,
-            font=ctk.CTkFont(size=12, family="Microsoft YaHei UI")
-        )
-        self.video_url_entry.grid(row=0, column=0, sticky="ew", padx=(0, 10))
-        self.video_url_entry.bind("<Return>", lambda e: self._parse_video())
-
-        self.video_parse_btn = ctk.CTkButton(
-            input_frame,
-            text="解析播放",
-            font=ctk.CTkFont(size=12, weight="bold", family="Microsoft YaHei UI"),
-            width=100,
-            height=44,
-            corner_radius=6,
-            fg_color=self.colors["primary"],
-            hover_color=self.colors["primary_hover"],
-            command=self._parse_video,
-        )
-        self.video_parse_btn.grid(row=0, column=1)
-
-        ctk.CTkButton(
-            input_frame,
-            text="清空",
-            font=ctk.CTkFont(size=12, family="Microsoft YaHei UI"),
-            width=60,
-            height=44,
-            corner_radius=6,
-            fg_color=(self.colors["bg_hover"], self.colors["bg_hover_dark"]),
-            hover_color=(self.colors["border"], self.colors["border_dark"]),
-            text_color=(self.colors["text_secondary"], self.colors["text_secondary_dark"]),
-            command=self._clear_video_url,
-        ).grid(row=0, column=2, padx=(10, 0))
-
-        # 解析线路选择
-        api_frame = ctk.CTkFrame(
-            self.video_content_frame,
-            fg_color=(self.colors["bg_base"], self.colors["bg_base_dark"]),
-            corner_radius=10
-        )
-        api_frame.grid(row=1, column=0, sticky="ew", pady=(0, 16))
-
-        ctk.CTkLabel(
-            api_frame,
-            text="解析线路:",
-            font=ctk.CTkFont(size=11, family="Microsoft YaHei UI"),
-            text_color=(self.colors["text_secondary"], self.colors["text_secondary_dark"])
-        ).pack(side="left", padx=16, pady=12)
-
-        # 解析API配置
-        self.video_parse_apis = [
-            ("https://jx.jsonplayer.com/player/?url=", "JSON解析"),
-            ("https://www.yemu.xyz/?url=", "夜幕解析"),
-            ("https://jx.playerjy.com/?url=", "播放解析"),
-            ("https://jx.aidouer.net/?url=", "爱豆解析"),
-            ("https://jx.xmflv.com/?url=", "xmflv解析"),
-            ("https://jx.m3u8.tv/jiexi/?url=", "M3U8解析"),
-            ("https://www.8090g.cn/?url=", "8090解析"),
-        ]
-        self.current_video_api = 0
-
-        api_names = [api[1] for api in self.video_parse_apis]
-        self.video_api_var = ctk.StringVar(value=api_names[0])
-        self.video_api_menu = ctk.CTkSegmentedButton(
-            api_frame,
-            values=api_names[:4],  # 只显示前4个
-            variable=self.video_api_var,
-            command=self._on_video_api_changed,
-            selected_color=self.colors["primary"],
-            selected_hover_color=self.colors["primary_hover"],
-            unselected_color=(self.colors["bg_elevated"], self.colors["bg_elevated_dark"]),
-            unselected_hover_color=(self.colors["bg_hover"], self.colors["bg_hover_dark"]),
-            font=ctk.CTkFont(size=11, family="Microsoft YaHei UI")
-        )
-        self.video_api_menu.pack(side="left", padx=8, pady=12)
-
-        # 状态标签
-        self.video_status_label = ctk.CTkLabel(
-            api_frame,
-            text="",
-            font=ctk.CTkFont(size=11, family="Microsoft YaHei UI"),
-            text_color=(self.colors["text_muted"], self.colors["text_muted_dark"])
-        )
-        self.video_status_label.pack(side="right", padx=16, pady=12)
-
-        # 快捷入口
-        platforms_frame = ctk.CTkFrame(
-            self.video_content_frame,
-            fg_color=(self.colors["bg_base"], self.colors["bg_base_dark"]),
-            corner_radius=10
-        )
-        platforms_frame.grid(row=2, column=0, sticky="ew", pady=(0, 16))
-
-        ctk.CTkLabel(
-            platforms_frame,
-            text="快捷入口:",
-            font=ctk.CTkFont(size=11, family="Microsoft YaHei UI"),
-            text_color=(self.colors["text_secondary"], self.colors["text_secondary_dark"])
-        ).pack(side="left", padx=16, pady=12)
-
-        platforms = [
-            ("腾讯视频", "https://v.qq.com"),
-            ("爱奇艺", "https://www.iqiyi.com"),
-            ("优酷", "https://www.youku.com"),
-            ("B站", "https://www.bilibili.com"),
-            ("芒果TV", "https://www.mgtv.com"),
-        ]
-
-        for name, url in platforms:
-            ctk.CTkButton(
-                platforms_frame,
-                text=name,
-                font=ctk.CTkFont(size=11, family="Microsoft YaHei UI"),
-                width=70,
-                height=30,
-                corner_radius=6,
-                fg_color="transparent",
-                hover_color=(self.colors["bg_hover"], self.colors["bg_hover_dark"]),
-                text_color=(self.colors["text_secondary"], self.colors["text_secondary_dark"]),
-                command=lambda u=url: self._open_video_platform(u),
-            ).pack(side="left", padx=4, pady=12)
-
-        # 说明文字
-        info_frame = ctk.CTkFrame(
-            self.video_content_frame,
-            fg_color=(self.colors["bg_base"], self.colors["bg_base_dark"]),
-            corner_radius=10
-        )
-        info_frame.grid(row=3, column=0, sticky="nsew")
-
-        info_text = """使用说明:
-1. 打开任意支持的视频网站，找到想看的VIP视频
-2. 复制视频页面的URL地址
-3. 粘贴到上方输入框，点击"解析播放"
-4. 如果解析失败，可尝试切换其他解析线路
-
-免责声明:
-本功能仅供学习交流使用，请勿用于商业用途。
-所有解析内容均来自第三方接口，与本软件无关。"""
-
-        ctk.CTkLabel(
-            info_frame,
-            text=info_text,
+        # 工具标签指示
+        self.toolbox_tag = ctk.CTkLabel(
+            title_frame,
+            text="多功能工具集",
             font=ctk.CTkFont(size=11, family="Microsoft YaHei UI"),
             text_color=(self.colors["text_muted"], self.colors["text_muted_dark"]),
-            justify="left",
-            anchor="nw"
-        ).pack(padx=16, pady=16, anchor="nw")
+            fg_color=(self.colors["bg_hover"], self.colors["bg_hover_dark"]),
+            corner_radius=6,
+            padx=8,
+            pady=2
+        )
+        self.toolbox_tag.pack(side="left", padx=(12, 0))
 
-    def _check_video_parser_access(self):
-        """检查视频解析功能访问权限"""
-        # 管理员或已解锁video_parser功能的用户可以访问
-        if self.is_admin or self.code_manager.is_feature_unlocked("video_parser"):
-            self.video_unlock_frame.grid_forget()
-            self.video_content_frame.grid(row=0, column=0, sticky="nsew", rowspan=4)
-            return True
+        # 分段按钮切换工具
+        self.toolbox_segmented = ctk.CTkSegmentedButton(
+            header,
+            values=["视频解析", "系统配置"],
+            font=ctk.CTkFont(size=13, family="Microsoft YaHei UI"),
+            corner_radius=8,
+            fg_color=(self.colors["bg_base"], self.colors["bg_base_dark"]),
+            selected_color=self.colors["primary"],
+            selected_hover_color=self.colors["primary_hover"],
+            unselected_color=(self.colors["bg_hover"], self.colors["bg_hover_dark"]),
+            unselected_hover_color=(self.colors["surface_light"], self.colors["surface_dark"]),
+            command=self._switch_toolbox_tab
+        )
+        self.toolbox_segmented.grid(row=0, column=1, sticky="e")
+        self.toolbox_segmented.set("视频解析")
+
+        # ============ 工具内容容器 ============
+        self.toolbox_container = ctk.CTkFrame(frame, fg_color="transparent")
+        self.toolbox_container.grid(row=1, column=0, sticky="nsew", padx=0, pady=0)
+        self.toolbox_container.grid_columnconfigure(0, weight=1)
+        self.toolbox_container.grid_rowconfigure(0, weight=1)
+
+        # 工具子页面
+        self.toolbox_pages = {}
+        self.current_toolbox_tab = "video_parser"
+
+        # 构建视频解析工具
+        self._build_video_parser_tool()
+
+        # 构建配置管理工具
+        self._build_config_tool()
+
+        # 默认显示视频解析
+        self.toolbox_pages["video_parser"].grid(row=0, column=0, sticky="nsew")
+
+    def _switch_toolbox_tab(self, value: str):
+        """切换工具箱标签页"""
+        tab_map = {
+            "视频解析": "video_parser",
+            "系统配置": "config"
+        }
+        new_tab = tab_map.get(value, "video_parser")
+
+        if new_tab == self.current_toolbox_tab:
+            return
+
+        # 隐藏当前页面
+        if self.current_toolbox_tab in self.toolbox_pages:
+            self.toolbox_pages[self.current_toolbox_tab].grid_forget()
+
+        # 显示新页面
+        self.current_toolbox_tab = new_tab
+        if new_tab in self.toolbox_pages:
+            self.toolbox_pages[new_tab].grid(row=0, column=0, sticky="nsew")
+
+        # 检查视频解析权限
+        if new_tab == "video_parser":
+            self._check_video_parser_access()
+
+    def _build_video_parser_tool(self):
+        """构建视频解析工具 - 简约高级风格"""
+        # 使用全局背景色
+        bg_primary = (self.colors["bg_light"], self.colors["bg_dark"])
+        bg_secondary = (self.colors["surface_light"], self.colors["surface_dark"])
+        bg_tertiary = (self.colors["bg_hover"], self.colors["bg_hover_dark"])
+        text_primary = (self.colors["text_light"], self.colors["text_dark"])
+        text_secondary = (self.colors["text_secondary"], self.colors["text_secondary_dark"])
+        text_muted = (self.colors["text_muted_light"], self.colors["text_muted_dark"])
+        border_color = (self.colors["border"], self.colors["border_dark"])
+        accent = self.colors["primary"]
+        accent_hover = self.colors["primary_hover"]
+
+        # 视频解析页面框架 - 放入工具箱容器
+        frame = ctk.CTkFrame(
+            self.toolbox_container,
+            fg_color="transparent",
+            corner_radius=0
+        )
+        self.toolbox_pages["video_parser"] = frame
+        frame.grid_columnconfigure(0, weight=1)
+        frame.grid_rowconfigure(1, weight=1)
+
+        # ============ 解锁检查容器 ============
+        self.video_unlock_frame = ctk.CTkFrame(frame, fg_color=bg_secondary, corner_radius=16)
+        self.video_unlock_frame.grid(row=0, column=0, rowspan=2, sticky="nsew", padx=24, pady=24)
+        self.video_unlock_frame.grid_columnconfigure(0, weight=1)
+        self.video_unlock_frame.grid_rowconfigure(0, weight=1)
+
+        unlock_content = ctk.CTkFrame(self.video_unlock_frame, fg_color="transparent")
+        unlock_content.place(relx=0.5, rely=0.45, anchor="center")
+
+        ctk.CTkFrame(unlock_content, width=80, height=80, corner_radius=40, fg_color=bg_tertiary, border_width=2, border_color=accent).pack(pady=(0, 20))
+        ctk.CTkLabel(unlock_content, text="PRO专属功能", font=ctk.CTkFont(size=20, weight="bold"), text_color=text_primary).pack(pady=(0, 8))
+        ctk.CTkLabel(unlock_content, text="请联系管理员获取兑换码", font=ctk.CTkFont(size=12), text_color=text_muted).pack(pady=(0, 20))
+        ctk.CTkButton(unlock_content, text="前往配置", width=140, height=42, corner_radius=10, fg_color=accent, hover_color=accent_hover, command=lambda: self._goto_config_in_toolbox()).pack()
+
+        # ============ 主功能内容 ============
+        self.video_content_frame = ctk.CTkFrame(frame, fg_color="transparent")
+        self.video_content_frame.grid_columnconfigure(0, weight=1)
+        self.video_content_frame.grid_rowconfigure(1, weight=1)
+
+        # ====== 输入区 ======
+        input_card = ctk.CTkFrame(self.video_content_frame, fg_color=bg_secondary, corner_radius=12)
+        input_card.grid(row=0, column=0, sticky="ew", padx=24, pady=(24, 16))
+        input_card.grid_columnconfigure(0, weight=1)
+
+        input_inner = ctk.CTkFrame(input_card, fg_color="transparent")
+        input_inner.pack(fill="x", padx=20, pady=16)
+        input_inner.grid_columnconfigure(0, weight=1)
+
+        self.video_url_entry = ctk.CTkEntry(
+            input_inner, placeholder_text="粘贴视频链接 (腾讯/爱奇艺/优酷/B站/芒果TV/M3U8)",
+            height=48, corner_radius=10, font=ctk.CTkFont(size=13),
+            fg_color=bg_tertiary, border_color=border_color, text_color=text_primary,
+            placeholder_text_color=text_muted, border_width=1
+        )
+        self.video_url_entry.pack(side="left", fill="x", expand=True, padx=(0, 12))
+        self.video_url_entry.bind("<Return>", lambda e: self._parse_and_play())
+        self.video_url_entry.bind("<KeyRelease>", self._on_url_input)
+
+        self.parse_btn = ctk.CTkButton(
+            input_inner, text="解析播放", width=120, height=48, corner_radius=10,
+            font=ctk.CTkFont(size=14, weight="bold"), fg_color=accent, hover_color=accent_hover,
+            command=self._parse_and_play
+        )
+        self.parse_btn.pack(side="right")
+
+        # ====== 视频信息面板 ======
+        info_card = ctk.CTkFrame(self.video_content_frame, fg_color=bg_secondary, corner_radius=12)
+        info_card.grid(row=1, column=0, sticky="nsew", padx=24, pady=(0, 16))
+        info_card.grid_columnconfigure(1, weight=1)
+        info_card.grid_rowconfigure(0, weight=1)
+
+        # 封面区域 (左侧)
+        self.cover_container = ctk.CTkFrame(info_card, width=320, height=180, fg_color=bg_tertiary, corner_radius=10)
+        self.cover_container.grid(row=0, column=0, padx=20, pady=20, sticky="nw")
+        self.cover_container.grid_propagate(False)
+
+        self.cover_image_label = ctk.CTkLabel(self.cover_container, text="", fg_color="transparent")
+        self.cover_image_label.place(relx=0.5, rely=0.5, anchor="center")
+
+        self.cover_placeholder = ctk.CTkLabel(
+            self.cover_container, text="等待解析...",
+            font=ctk.CTkFont(size=13), text_color=text_muted
+        )
+        self.cover_placeholder.place(relx=0.5, rely=0.5, anchor="center")
+
+        # 信息区域 (右侧)
+        info_right = ctk.CTkFrame(info_card, fg_color="transparent")
+        info_right.grid(row=0, column=1, sticky="nsew", padx=(0, 20), pady=20)
+        info_right.grid_columnconfigure(0, weight=1)
+
+        # 标题行
+        title_row = ctk.CTkFrame(info_right, fg_color="transparent")
+        title_row.pack(fill="x", pady=(0, 12))
+
+        self.video_title = ctk.CTkLabel(
+            title_row, text="粘贴链接开始解析",
+            font=ctk.CTkFont(size=18, weight="bold"), text_color=text_primary,
+            anchor="w", wraplength=450
+        )
+        self.video_title.pack(side="left", fill="x", expand=True)
+
+        self.vip_tag = ctk.CTkLabel(
+            title_row, text="VIP", font=ctk.CTkFont(size=10, weight="bold"),
+            fg_color=self.colors["warning"], text_color="#000", corner_radius=4, width=40, height=20
+        )
+        self.vip_tag.pack(side="right", padx=(8, 0))
+        self.vip_tag.pack_forget()
+
+        # 平台 + 时长
+        meta_row = ctk.CTkFrame(info_right, fg_color="transparent")
+        meta_row.pack(fill="x", pady=(0, 16))
+
+        self.platform_tag = ctk.CTkLabel(
+            meta_row, text="", font=ctk.CTkFont(size=11),
+            fg_color=accent, text_color="#fff", corner_radius=4, height=22
+        )
+        self.platform_tag.pack(side="left")
+        self.platform_tag.pack_forget()
+
+        self.duration_label = ctk.CTkLabel(
+            meta_row, text="", font=ctk.CTkFont(size=11), text_color=text_muted
+        )
+        self.duration_label.pack(side="left", padx=(12, 0))
+
+        # 描述
+        self.desc_label = ctk.CTkLabel(
+            info_right, text="支持平台: 腾讯视频 / 爱奇艺 / 优酷 / 哔哩哔哩 / 芒果TV / M3U8直链",
+            font=ctk.CTkFont(size=12), text_color=text_muted, anchor="w", wraplength=450, justify="left"
+        )
+        self.desc_label.pack(fill="x", pady=(0, 16))
+
+        # 剧集选择区
+        ep_frame = ctk.CTkFrame(info_right, fg_color="transparent")
+        ep_frame.pack(fill="x", pady=(0, 12))
+
+        ctk.CTkLabel(ep_frame, text="选集", font=ctk.CTkFont(size=12, weight="bold"), text_color=text_secondary).pack(side="left")
+        self.ep_count_label = ctk.CTkLabel(ep_frame, text="", font=ctk.CTkFont(size=11), text_color=text_muted)
+        self.ep_count_label.pack(side="left", padx=(8, 0))
+
+        # 剧集按钮滚动区
+        self.ep_scroll = ctk.CTkScrollableFrame(
+            info_right, height=50, fg_color=bg_tertiary, corner_radius=8,
+            orientation="horizontal"
+        )
+        self.ep_scroll.pack(fill="x")
+        self.ep_buttons = []
+        self.episodes_data = []
+        self._current_ep_index = 0
+
+        # 底部操作栏
+        action_bar = ctk.CTkFrame(info_right, fg_color="transparent")
+        action_bar.pack(fill="x", pady=(16, 0))
+
+        self.prev_ep_btn = ctk.CTkButton(
+            action_bar, text="◀ 上一集", width=90, height=36, corner_radius=8,
+            fg_color=bg_tertiary, hover_color=border_color, text_color=text_primary,
+            font=ctk.CTkFont(size=11), command=self._prev_ep, state="disabled"
+        )
+        self.prev_ep_btn.pack(side="left", padx=(0, 8))
+
+        self.next_ep_btn = ctk.CTkButton(
+            action_bar, text="下一集 ▶", width=90, height=36, corner_radius=8,
+            fg_color=accent, hover_color=accent_hover,
+            font=ctk.CTkFont(size=11, weight="bold"), command=self._next_ep, state="disabled"
+        )
+        self.next_ep_btn.pack(side="left")
+
+        # 状态
+        self.status_label = ctk.CTkLabel(
+            action_bar, text="就绪", font=ctk.CTkFont(size=11), text_color=text_muted
+        )
+        self.status_label.pack(side="right")
+
+        # 初始化状态
+        self._video_info = None
+        self._parse_api = "https://jx.m3u8.tv/jiexi/?url="
+        self._cover_image = None  # 保持引用
+
+    # ====== 视频解析核心方法 ======
+
+    def _on_url_input(self, event=None):
+        """URL输入时实时识别平台"""
+        url = self.video_url_entry.get().strip()
+        if not url:
+            self.platform_tag.pack_forget()
+            return
+
+        platform = self._identify_platform(url)
+        if platform:
+            self.platform_tag.configure(text=f" {platform['name']} ", fg_color=platform['color'])
+            self.platform_tag.pack(side="left")
         else:
-            self.video_content_frame.grid_forget()
-            self.video_unlock_frame.grid(row=0, column=0, sticky="nsew", rowspan=4)
-            return False
+            self.platform_tag.pack_forget()
 
-    def _parse_video(self):
-        """解析视频"""
-        # 检查权限
+    def _identify_platform(self, url: str) -> dict:
+        """识别视频平台"""
+        platforms = {
+            "v.qq.com": {"name": "腾讯视频", "color": "#FF6A00", "key": "tencent"},
+            "iqiyi.com": {"name": "爱奇艺", "color": "#00BE06", "key": "iqiyi"},
+            "youku.com": {"name": "优酷", "color": "#1A9FFF", "key": "youku"},
+            "bilibili.com": {"name": "哔哩哔哩", "color": "#FB7299", "key": "bilibili"},
+            "b23.tv": {"name": "哔哩哔哩", "color": "#FB7299", "key": "bilibili"},
+            "mgtv.com": {"name": "芒果TV", "color": "#FF7F00", "key": "mgtv"},
+            "sohu.com": {"name": "搜狐视频", "color": "#FF6600", "key": "sohu"},
+            ".m3u8": {"name": "M3U8", "color": self.colors["primary"], "key": "m3u8"},
+        }
+        url_lower = url.lower()
+        for domain, info in platforms.items():
+            if domain in url_lower:
+                return info
+        return None
+
+    def _parse_and_play(self):
+        """解析并自动播放"""
         if not self.is_admin and not self.code_manager.is_feature_unlocked("video_parser"):
-            self._show_message("权限不足", "此功能需要PRO版本，请使用PRO兑换码解锁")
+            self._show_message("权限不足", "此功能需要PRO版本")
             return
 
         url = self.video_url_entry.get().strip()
         if not url:
-            self.video_status_label.configure(text="请输入视频链接", text_color=self.colors["error"])
+            self._set_status("请输入视频链接", "warning")
             return
 
-        # 简单URL验证
         if not url.startswith(("http://", "https://")):
-            self.video_status_label.configure(text="请输入有效的URL", text_color=self.colors["error"])
+            url = "https://" + url
+            self.video_url_entry.delete(0, "end")
+            self.video_url_entry.insert(0, url)
+
+        self._set_status("正在解析...", "info")
+        self.parse_btn.configure(state="disabled", text="解析中...")
+
+        # 重置封面
+        self.cover_placeholder.configure(text="加载中...")
+        self.cover_placeholder.place(relx=0.5, rely=0.5, anchor="center")
+        self.cover_image_label.configure(image=None)
+
+        # 异步获取视频信息
+        threading.Thread(target=self._fetch_video_info, args=(url,), daemon=True).start()
+
+    def _fetch_video_info(self, url: str):
+        """获取视频信息（异步）"""
+        try:
+            import requests
+            from bs4 import BeautifulSoup
+            import re
+            import json
+
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/122.0.0.0 Safari/537.36",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+                "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
+            }
+
+            response = requests.get(url, headers=headers, timeout=15)
+            response.encoding = 'utf-8'
+            html = response.text
+            soup = BeautifulSoup(html, 'html.parser')
+
+            # 提取标题
+            title = ""
+            meta_title = soup.find("meta", property="og:title")
+            if meta_title:
+                title = meta_title.get("content", "")
+            if not title:
+                title_tag = soup.find("title")
+                if title_tag:
+                    title = title_tag.get_text().strip()
+                    for suffix in ["_腾讯视频", "-腾讯视频", "| 腾讯视频", "_高清在线观看", "-爱奇艺", "_哔哩哔哩", " - 哔哩哔哩"]:
+                        title = title.replace(suffix, "").strip()
+
+            # 提取封面 - 多种方式尝试
+            cover_url = ""
+            # 1. og:image
+            meta_image = soup.find("meta", property="og:image")
+            if meta_image and meta_image.get("content"):
+                cover_url = meta_image["content"]
+            # 2. itemprop image
+            if not cover_url:
+                item_image = soup.find("meta", itemprop="image")
+                if item_image and item_image.get("content"):
+                    cover_url = item_image["content"]
+            # 3. video poster
+            if not cover_url:
+                video_tag = soup.find("video")
+                if video_tag and video_tag.get("poster"):
+                    cover_url = video_tag["poster"]
+            # 4. JSON中的cover
+            if not cover_url:
+                cover_match = re.search(r'"cover"\s*:\s*"(https?://[^"]+)"', html)
+                if cover_match:
+                    cover_url = cover_match.group(1)
+            # 5. pic_url
+            if not cover_url:
+                pic_match = re.search(r'"pic(?:_url)?"\s*:\s*"(https?://[^"]+)"', html)
+                if pic_match:
+                    cover_url = pic_match.group(1)
+
+            # 检查VIP
+            is_vip = any(kw in html for kw in ["VIP", "会员", "付费", "用券", "vip-icon", "pay-mark"])
+
+            # 提取时长
+            duration = ""
+            meta_duration = soup.find("meta", property="video:duration")
+            if meta_duration:
+                try:
+                    seconds = int(meta_duration.get("content", 0))
+                    if seconds > 0:
+                        mins, secs = divmod(seconds, 60)
+                        hours, mins = divmod(mins, 60)
+                        if hours > 0:
+                            duration = f"{hours}:{mins:02d}:{secs:02d}"
+                        else:
+                            duration = f"{mins}:{secs:02d}"
+                except:
+                    pass
+
+            # 提取剧集 - 真正获取每集URL
+            platform = self._identify_platform(url)
+            episodes = self._extract_episodes_real(html, url, platform)
+
+            # 更新UI
+            self.after(0, lambda: self._update_video_ui({
+                "url": url,
+                "title": title or "未知标题",
+                "cover_url": cover_url,
+                "is_vip": is_vip,
+                "duration": duration,
+                "episodes": episodes
+            }))
+
+        except Exception as e:
+            self.after(0, lambda: self._on_parse_error(str(e), url))
+
+    def _extract_episodes_real(self, html: str, base_url: str, platform: dict) -> list:
+        """真正提取每集的独立URL"""
+        import re
+        import json
+
+        episodes = []
+        platform_key = platform.get("key", "") if platform else ""
+
+        # 提取cover_id (腾讯视频)
+        cover_match = re.search(r'/x/cover/([a-zA-Z0-9]+)', base_url)
+        cover_id = cover_match.group(1) if cover_match else None
+
+        # 腾讯视频
+        if platform_key == "tencent":
+            patterns = [
+                r'"nomark_episode_list"\s*:\s*(\[[\s\S]*?\])\s*,\s*"',
+                r'"episode_list"\s*:\s*(\[[\s\S]*?\])\s*,',
+            ]
+            for pattern in patterns:
+                match = re.search(pattern, html)
+                if match:
+                    try:
+                        ep_json = self._fix_json_array(match.group(1))
+                        data = json.loads(ep_json)
+                        for i, ep in enumerate(data[:60]):
+                            if isinstance(ep, dict):
+                                vid = ep.get('vid') or ep.get('V') or ep.get('video_id', '')
+                                ep_title = ep.get('title') or ep.get('play_title') or f"第{i+1}集"
+                                if vid:
+                                    if cover_id:
+                                        ep_url = f"https://v.qq.com/x/cover/{cover_id}/{vid}.html"
+                                    else:
+                                        ep_url = f"https://v.qq.com/x/page/{vid}.html"
+                                    episodes.append({"url": ep_url, "title": str(ep_title)})
+                        if episodes:
+                            return episodes
+                    except:
+                        continue
+
+        # 哔哩哔哩
+        elif platform_key == "bilibili":
+            # 番剧
+            patterns = [
+                r'"episodes"\s*:\s*(\[[\s\S]*?\])\s*,\s*"(?:section|activity|positive)',
+                r'"epList"\s*:\s*(\[[\s\S]*?\])',
+            ]
+            for pattern in patterns:
+                match = re.search(pattern, html)
+                if match:
+                    try:
+                        ep_json = self._fix_json_array(match.group(1))
+                        data = json.loads(ep_json)
+                        for ep in data[:60]:
+                            ep_id = ep.get('id') or ep.get('ep_id') or ep.get('epid', '')
+                            share_url = ep.get('share_url') or ep.get('link', '')
+                            ep_title = ep.get('long_title') or ep.get('title') or ''
+                            index = ep.get('title') or ep.get('index', '')
+                            if ep_id:
+                                ep_url = share_url if share_url else f"https://www.bilibili.com/bangumi/play/ep{ep_id}"
+                                display = f"第{index}集 {ep_title}".strip() if index else (ep_title or f"第{len(episodes)+1}集")
+                                episodes.append({"url": ep_url, "title": display})
+                        if episodes:
+                            return episodes
+                    except:
+                        continue
+
+            # 分P视频
+            page_match = re.search(r'"pages"\s*:\s*(\[[\s\S]*?\])', html)
+            if page_match:
+                try:
+                    bv_match = re.search(r'/(BV[a-zA-Z0-9]+)', base_url)
+                    bvid = bv_match.group(1) if bv_match else None
+                    if bvid:
+                        pages = json.loads(self._fix_json_array(page_match.group(1)))
+                        for page in pages[:60]:
+                            page_num = page.get('page', len(episodes) + 1)
+                            part_title = page.get('part', f"P{page_num}")
+                            ep_url = f"https://www.bilibili.com/video/{bvid}?p={page_num}"
+                            episodes.append({"url": ep_url, "title": f"P{page_num} {part_title}"})
+                        if episodes:
+                            return episodes
+                except:
+                    pass
+
+        # 爱奇艺
+        elif platform_key == "iqiyi":
+            patterns = [
+                r'"episodeList"\s*:\s*(\[[\s\S]*?\])\s*,',
+                r'"videoList"\s*:\s*(\[[\s\S]*?\])\s*,',
+            ]
+            for pattern in patterns:
+                match = re.search(pattern, html)
+                if match:
+                    try:
+                        data = json.loads(self._fix_json_array(match.group(1)))
+                        for ep in data[:60]:
+                            play_url = ep.get('playUrl') or ep.get('url', '')
+                            ep_title = ep.get('name') or ep.get('title') or f"第{len(episodes)+1}集"
+                            if play_url and play_url.startswith('http'):
+                                episodes.append({"url": play_url, "title": str(ep_title)})
+                        if episodes:
+                            return episodes
+                    except:
+                        continue
+
+        # 优酷
+        elif platform_key == "youku":
+            patterns = [r'"videos"\s*:\s*(\[[\s\S]*?\])\s*,']
+            for pattern in patterns:
+                match = re.search(pattern, html)
+                if match:
+                    try:
+                        data = json.loads(self._fix_json_array(match.group(1)))
+                        for ep in data[:60]:
+                            link = ep.get('link') or ep.get('url', '')
+                            ep_title = ep.get('title') or ep.get('name', '') or f"第{len(episodes)+1}集"
+                            if link:
+                                ep_url = link if link.startswith('http') else f"https:{link}"
+                                episodes.append({"url": ep_url, "title": str(ep_title)})
+                        if episodes:
+                            return episodes
+                    except:
+                        continue
+
+        # 芒果TV
+        elif platform_key == "mgtv":
+            patterns = [r'"list"\s*:\s*(\[[\s\S]*?\])\s*,\s*"(?:next|total)']
+            for pattern in patterns:
+                match = re.search(pattern, html)
+                if match:
+                    try:
+                        data = json.loads(self._fix_json_array(match.group(1)))
+                        for ep in data[:60]:
+                            url_path = ep.get('url', '')
+                            ep_title = ep.get('t1') or ep.get('title', '') or f"第{len(episodes)+1}集"
+                            if url_path:
+                                if url_path.startswith('/'):
+                                    ep_url = f"https://www.mgtv.com{url_path}"
+                                elif url_path.startswith('http'):
+                                    ep_url = url_path
+                                else:
+                                    continue
+                                episodes.append({"url": ep_url, "title": str(ep_title)})
+                        if episodes:
+                            return episodes
+                    except:
+                        continue
+
+        return episodes
+
+    def _fix_json_array(self, json_str: str) -> str:
+        """修复可能被截断的JSON数组"""
+        bracket_count = 0
+        in_string = False
+        escape_next = False
+
+        for i, char in enumerate(json_str):
+            if escape_next:
+                escape_next = False
+                continue
+            if char == '\\':
+                escape_next = True
+                continue
+            if char == '"' and not escape_next:
+                in_string = not in_string
+                continue
+            if in_string:
+                continue
+            if char == '[':
+                bracket_count += 1
+            elif char == ']':
+                bracket_count -= 1
+                if bracket_count == 0:
+                    return json_str[:i+1]
+
+        return json_str
+
+    def _update_video_ui(self, info: dict):
+        """更新视频信息UI"""
+        self._video_info = info
+        url = info["url"]
+
+        # 更新标题
+        self.video_title.configure(text=info["title"])
+
+        # VIP标签
+        if info["is_vip"]:
+            self.vip_tag.pack(side="right", padx=(8, 0))
+        else:
+            self.vip_tag.pack_forget()
+
+        # 时长
+        if info["duration"]:
+            self.duration_label.configure(text=f"时长: {info['duration']}")
+        else:
+            self.duration_label.configure(text="")
+
+        # 描述
+        self.desc_label.configure(text="")
+
+        # 加载封面
+        if info["cover_url"]:
+            threading.Thread(target=self._load_cover_image, args=(info["cover_url"],), daemon=True).start()
+        else:
+            self.cover_placeholder.configure(text="无封面")
+
+        # 更新剧集
+        self._update_episodes(info["episodes"])
+
+        # 恢复按钮
+        self.parse_btn.configure(state="normal", text="解析播放")
+        self._set_status("解析成功", "success")
+
+        # 自动打开播放
+        parse_url = f"{self._parse_api}{url}"
+        try:
+            webbrowser.open(parse_url)
+        except Exception as e:
+            self._set_status(f"打开失败: {e}", "error")
+
+    def _on_parse_error(self, error: str, url: str):
+        """解析出错时仍然尝试播放"""
+        self.parse_btn.configure(state="normal", text="解析播放")
+        self._set_status("直接播放中...", "info")
+        self.cover_placeholder.configure(text="无封面")
+
+        # 即使获取信息失败，也尝试播放
+        parse_url = f"{self._parse_api}{url}"
+        try:
+            webbrowser.open(parse_url)
+            self.video_title.configure(text="正在播放...")
+        except Exception as e:
+            self._set_status(f"播放失败: {e}", "error")
+
+    def _load_cover_image(self, cover_url: str):
+        """加载封面图片"""
+        try:
+            import requests
+            from PIL import Image
+            import io
+
+            # 处理URL
+            if cover_url.startswith("//"):
+                cover_url = "https:" + cover_url
+
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                "Referer": "https://v.qq.com/"
+            }
+
+            response = requests.get(cover_url, headers=headers, timeout=10)
+            if response.status_code == 200:
+                image_data = io.BytesIO(response.content)
+                pil_image = Image.open(image_data)
+
+                # 保持比例缩放
+                orig_w, orig_h = pil_image.size
+                target_w, target_h = 320, 180
+                ratio = min(target_w / orig_w, target_h / orig_h)
+                new_w, new_h = int(orig_w * ratio), int(orig_h * ratio)
+                pil_image = pil_image.resize((new_w, new_h), Image.Resampling.LANCZOS)
+
+                ctk_image = ctk.CTkImage(light_image=pil_image, dark_image=pil_image, size=(new_w, new_h))
+                self.after(0, lambda: self._set_cover(ctk_image))
+        except Exception as e:
+            self.after(0, lambda: self.cover_placeholder.configure(text="封面加载失败"))
+
+    def _set_cover(self, image):
+        """设置封面图片"""
+        self._cover_image = image  # 保持引用防止被回收
+        self.cover_placeholder.place_forget()
+        self.cover_image_label.configure(image=image)
+
+    def _update_episodes(self, episodes: list):
+        """更新剧集按钮"""
+        # 清空旧按钮
+        for btn in self.ep_buttons:
+            btn.destroy()
+        self.ep_buttons.clear()
+        self.episodes_data = episodes
+        self._current_ep_index = 0
+
+        if not episodes:
+            self.ep_count_label.configure(text="单集")
+            self.prev_ep_btn.configure(state="disabled")
+            self.next_ep_btn.configure(state="disabled")
             return
 
-        # 获取当前选择的API
-        api_url = self.video_parse_apis[self.current_video_api][0]
-        parse_url = f"{api_url}{url}"
+        self.ep_count_label.configure(text=f"共{len(episodes)}集")
 
-        try:
-            import webbrowser
-            webbrowser.open(parse_url)
-            self.video_status_label.configure(text="已打开浏览器播放", text_color=self.colors["success"])
-        except Exception as e:
-            self.video_status_label.configure(text=f"打开失败: {e}", text_color=self.colors["error"])
+        bg_tertiary = (self.colors["bg_hover"], self.colors["bg_hover_dark"])
+        accent = self.colors["primary"]
 
-    def _clear_video_url(self):
-        """清空视频URL"""
-        self.video_url_entry.delete(0, "end")
-        self.video_status_label.configure(text="")
+        for i, ep in enumerate(episodes):
+            is_current = (i == 0)
+            btn = ctk.CTkButton(
+                self.ep_scroll,
+                text=str(i + 1),
+                width=40, height=36,
+                corner_radius=6,
+                fg_color=accent if is_current else bg_tertiary,
+                hover_color=self.colors["primary_hover"] if is_current else self.colors["border"],
+                font=ctk.CTkFont(size=12, weight="bold" if is_current else "normal"),
+                command=lambda idx=i: self._select_episode(idx)
+            )
+            btn.pack(side="left", padx=3, pady=6)
+            self.ep_buttons.append(btn)
 
-    def _on_video_api_changed(self, choice: str):
-        """切换视频解析API"""
-        for i, (url, name) in enumerate(self.video_parse_apis):
-            if name == choice:
-                self.current_video_api = i
-                self.video_status_label.configure(
-                    text=f"已切换: {name}",
-                    text_color=(self.colors["text_muted"], self.colors["text_muted_dark"])
-                )
-                break
+        # 启用上下集按钮
+        self.prev_ep_btn.configure(state="disabled")
+        self.next_ep_btn.configure(state="normal" if len(episodes) > 1 else "disabled")
 
-    def _open_video_platform(self, url: str):
-        """打开视频平台"""
-        import webbrowser
-        webbrowser.open(url)
+    def _select_episode(self, index: int):
+        """选择剧集并播放对应URL"""
+        if not self.episodes_data or index < 0 or index >= len(self.episodes_data):
+            return
 
-    def _build_config_content(self):
-        """构建配置管理内容页"""
+        # 更新按钮样式
+        bg_tertiary = (self.colors["bg_hover"], self.colors["bg_hover_dark"])
+        accent = self.colors["primary"]
+
+        for i, btn in enumerate(self.ep_buttons):
+            is_current = (i == index)
+            btn.configure(
+                fg_color=accent if is_current else bg_tertiary,
+                font=ctk.CTkFont(size=12, weight="bold" if is_current else "normal")
+            )
+
+        self._current_ep_index = index
+
+        # 更新上下集按钮
+        self.prev_ep_btn.configure(state="normal" if index > 0 else "disabled")
+        self.next_ep_btn.configure(state="normal" if index < len(self.episodes_data) - 1 else "disabled")
+
+        # 播放该集 - 使用该集的独立URL
+        ep = self.episodes_data[index]
+        ep_url = ep.get("url", "")
+        ep_title = ep.get("title", f"第{index+1}集")
+
+        self._set_status(f"播放: {ep_title}", "info")
+        self.video_title.configure(text=ep_title)
+
+        if ep_url:
+            parse_url = f"{self._parse_api}{ep_url}"
+            try:
+                webbrowser.open(parse_url)
+            except Exception as e:
+                self._set_status(f"打开失败: {e}", "error")
+
+    def _prev_ep(self):
+        """上一集"""
+        if self._current_ep_index > 0:
+            self._select_episode(self._current_ep_index - 1)
+
+    def _next_ep(self):
+        """下一集"""
+        if self._current_ep_index < len(self.episodes_data) - 1:
+            self._select_episode(self._current_ep_index + 1)
+
+    def _set_status(self, text: str, status_type: str = "info"):
+        """设置状态"""
+        colors = {
+            "info": (self.colors["text_secondary"], self.colors["text_secondary_dark"]),
+            "success": (self.colors["success"], self.colors["success"]),
+            "warning": (self.colors["warning"], self.colors["warning"]),
+            "error": (self.colors["error"], self.colors["error"]),
+        }
+        self.status_label.configure(text=text, text_color=colors.get(status_type, colors["info"]))
+
+
+    def _check_video_parser_access(self):
+        """检查视频解析功能访问权限"""
+        if self.is_admin or self.code_manager.is_feature_unlocked("video_parser"):
+            self.video_unlock_frame.grid_forget()
+            self.video_content_frame.grid(row=0, column=0, sticky="nsew", columnspan=2)
+            return True
+        else:
+            self.video_content_frame.grid_forget()
+            self.video_unlock_frame.grid(row=0, column=0, sticky="nsew")
+            return False
+
+    def _goto_config_in_toolbox(self):
+        """跳转到工具箱中的配置页面"""
+        self.toolbox_segmented.set("系统配置")
+        self._switch_toolbox_tab("系统配置")
+
+    def _build_config_tool(self):
+        """构建配置管理工具"""
+        # 配置页面框架 - 放入工具箱容器
         frame = ctk.CTkFrame(
-            self.content_container,
-            fg_color=(self.colors["bg_elevated"], self.colors["bg_elevated_dark"]),
-            corner_radius=12,
-            border_width=1,
-            border_color=(self.colors["border"], self.colors["border_dark"])
+            self.toolbox_container,
+            fg_color="transparent",
+            corner_radius=0
         )
-        self.content_frames["config"] = frame
+        self.toolbox_pages["config"] = frame
 
         frame.grid_columnconfigure(0, weight=1)
         frame.grid_rowconfigure(1, weight=1)
 
         # 页面标题
         header = ctk.CTkFrame(frame, fg_color="transparent")
-        header.grid(row=0, column=0, sticky="ew", padx=24, pady=(24, 16))
+        header.grid(row=0, column=0, sticky="ew", padx=24, pady=(16, 12))
 
         ctk.CTkLabel(
             header,
-            text="配置管理",
-            font=ctk.CTkFont(size=20, weight="bold", family="Microsoft YaHei UI"),
+            text="系统配置",
+            font=ctk.CTkFont(size=18, weight="bold", family="Microsoft YaHei UI"),
             text_color=(self.colors["text_primary"], self.colors["text_primary_dark"])
         ).pack(side="left")
 
@@ -2072,8 +2825,13 @@ class MainApp(ctk.CTk):
             show="●",
             width=200,
             height=36,
-            corner_radius=6,
-            placeholder_text="输入密码"
+            corner_radius=8,
+            placeholder_text="输入密码",
+            font=ctk.CTkFont(size=12, family="Microsoft YaHei UI"),
+            fg_color=(self.colors["bg_elevated"], self.colors["bg_elevated_dark"]),
+            border_color=(self.colors["border"], self.colors["border_dark"]),
+            text_color=(self.colors["text_primary"], self.colors["text_primary_dark"]),
+            placeholder_text_color=(self.colors["text_muted"], self.colors["text_muted_dark"])
         )
         self.config_pwd_entry.pack(side="left", padx=(0, 8))
         self.config_pwd_entry.bind("<Return>", lambda e: self._unlock_config())
@@ -2084,7 +2842,7 @@ class MainApp(ctk.CTk):
             font=ctk.CTkFont(size=12, family="Microsoft YaHei UI"),
             width=80,
             height=36,
-            corner_radius=6,
+            corner_radius=8,
             fg_color=self.colors["primary"],
             hover_color=self.colors["primary_hover"],
             command=self._unlock_config,
@@ -2129,7 +2887,12 @@ class MainApp(ctk.CTk):
             lang_card,
             placeholder_text="如: Kotlin",
             height=36,
-            corner_radius=6
+            corner_radius=8,
+            font=ctk.CTkFont(size=12, family="Microsoft YaHei UI"),
+            fg_color=(self.colors["bg_elevated"], self.colors["bg_elevated_dark"]),
+            border_color=(self.colors["border"], self.colors["border_dark"]),
+            text_color=(self.colors["text_primary"], self.colors["text_primary_dark"]),
+            placeholder_text_color=(self.colors["text_muted"], self.colors["text_muted_dark"])
         )
         self.new_lang_entry.grid(row=1, column=1, sticky="ew", padx=8, pady=8)
 
@@ -2139,7 +2902,7 @@ class MainApp(ctk.CTk):
             font=ctk.CTkFont(size=11, family="Microsoft YaHei UI"),
             width=80,
             height=36,
-            corner_radius=6,
+            corner_radius=8,
             fg_color=self.colors["primary"],
             hover_color=self.colors["primary_hover"],
             command=self._add_language,
@@ -2175,7 +2938,13 @@ class MainApp(ctk.CTk):
             variable=self.cat_lang_var,
             width=150,
             height=36,
-            corner_radius=6
+            corner_radius=8,
+            font=ctk.CTkFont(size=12, family="Microsoft YaHei UI"),
+            fg_color=(self.colors["bg_elevated"], self.colors["bg_elevated_dark"]),
+            button_color=(self.colors["bg_hover"], self.colors["bg_hover_dark"]),
+            button_hover_color=self.colors["primary"],
+            dropdown_fg_color=(self.colors["bg_base"], self.colors["bg_base_dark"]),
+            dropdown_hover_color=(self.colors["bg_hover"], self.colors["bg_hover_dark"])
         )
         self.cat_lang_menu.grid(row=1, column=1, sticky="w", padx=8, pady=8)
 
@@ -2190,7 +2959,12 @@ class MainApp(ctk.CTk):
             cat_card,
             placeholder_text="如: 游戏开发",
             height=36,
-            corner_radius=6
+            corner_radius=8,
+            font=ctk.CTkFont(size=12, family="Microsoft YaHei UI"),
+            fg_color=(self.colors["bg_elevated"], self.colors["bg_elevated_dark"]),
+            border_color=(self.colors["border"], self.colors["border_dark"]),
+            text_color=(self.colors["text_primary"], self.colors["text_primary_dark"]),
+            placeholder_text_color=(self.colors["text_muted"], self.colors["text_muted_dark"])
         )
         self.new_cat_entry.grid(row=2, column=1, sticky="ew", padx=8, pady=8)
 
@@ -2200,7 +2974,7 @@ class MainApp(ctk.CTk):
             font=ctk.CTkFont(size=11, family="Microsoft YaHei UI"),
             width=80,
             height=36,
-            corner_radius=6,
+            corner_radius=8,
             fg_color=self.colors["primary"],
             hover_color=self.colors["primary_hover"],
             command=self._add_category,
@@ -2237,7 +3011,13 @@ class MainApp(ctk.CTk):
             command=self._on_fw_lang_changed,
             width=150,
             height=36,
-            corner_radius=6
+            corner_radius=8,
+            font=ctk.CTkFont(size=12, family="Microsoft YaHei UI"),
+            fg_color=(self.colors["bg_elevated"], self.colors["bg_elevated_dark"]),
+            button_color=(self.colors["bg_hover"], self.colors["bg_hover_dark"]),
+            button_hover_color=self.colors["primary"],
+            dropdown_fg_color=(self.colors["bg_base"], self.colors["bg_base_dark"]),
+            dropdown_hover_color=(self.colors["bg_hover"], self.colors["bg_hover_dark"])
         )
         self.fw_lang_menu.grid(row=1, column=1, sticky="w", padx=8, pady=8)
 
@@ -2255,7 +3035,13 @@ class MainApp(ctk.CTk):
             variable=self.fw_cat_var,
             width=150,
             height=36,
-            corner_radius=6
+            corner_radius=8,
+            font=ctk.CTkFont(size=12, family="Microsoft YaHei UI"),
+            fg_color=(self.colors["bg_elevated"], self.colors["bg_elevated_dark"]),
+            button_color=(self.colors["bg_hover"], self.colors["bg_hover_dark"]),
+            button_hover_color=self.colors["primary"],
+            dropdown_fg_color=(self.colors["bg_base"], self.colors["bg_base_dark"]),
+            dropdown_hover_color=(self.colors["bg_hover"], self.colors["bg_hover_dark"])
         )
         self.fw_cat_menu.grid(row=2, column=1, sticky="w", padx=8, pady=8)
 
@@ -2270,7 +3056,12 @@ class MainApp(ctk.CTk):
             fw_card,
             placeholder_text="如: Pygame",
             height=36,
-            corner_radius=6
+            corner_radius=8,
+            font=ctk.CTkFont(size=12, family="Microsoft YaHei UI"),
+            fg_color=(self.colors["bg_elevated"], self.colors["bg_elevated_dark"]),
+            border_color=(self.colors["border"], self.colors["border_dark"]),
+            text_color=(self.colors["text_primary"], self.colors["text_primary_dark"]),
+            placeholder_text_color=(self.colors["text_muted"], self.colors["text_muted_dark"])
         )
         self.new_fw_entry.grid(row=3, column=1, sticky="ew", padx=8, pady=8)
 
@@ -2280,7 +3071,7 @@ class MainApp(ctk.CTk):
             font=ctk.CTkFont(size=11, family="Microsoft YaHei UI"),
             width=80,
             height=36,
-            corner_radius=6,
+            corner_radius=8,
             fg_color=self.colors["primary"],
             hover_color=self.colors["primary_hover"],
             command=self._add_framework,
@@ -2326,7 +3117,12 @@ class MainApp(ctk.CTk):
             placeholder_text="如: DeepSeek",
             width=120,
             height=36,
-            corner_radius=6
+            corner_radius=8,
+            font=ctk.CTkFont(size=12, family="Microsoft YaHei UI"),
+            fg_color=(self.colors["bg_elevated"], self.colors["bg_elevated_dark"]),
+            border_color=(self.colors["border"], self.colors["border_dark"]),
+            text_color=(self.colors["text_primary"], self.colors["text_primary_dark"]),
+            placeholder_text_color=(self.colors["text_muted"], self.colors["text_muted_dark"])
         )
         self.new_website_name_entry.grid(row=2, column=1, sticky="w", padx=8, pady=8)
 
@@ -2341,7 +3137,12 @@ class MainApp(ctk.CTk):
             web_card,
             placeholder_text="https://...",
             height=36,
-            corner_radius=6
+            corner_radius=8,
+            font=ctk.CTkFont(size=12, family="Microsoft YaHei UI"),
+            fg_color=(self.colors["bg_elevated"], self.colors["bg_elevated_dark"]),
+            border_color=(self.colors["border"], self.colors["border_dark"]),
+            text_color=(self.colors["text_primary"], self.colors["text_primary_dark"]),
+            placeholder_text_color=(self.colors["text_muted"], self.colors["text_muted_dark"])
         )
         self.new_website_url_entry.grid(row=3, column=1, sticky="ew", padx=8, pady=8)
 
@@ -2351,7 +3152,7 @@ class MainApp(ctk.CTk):
             font=ctk.CTkFont(size=11, family="Microsoft YaHei UI"),
             width=80,
             height=36,
-            corner_radius=6,
+            corner_radius=8,
             fg_color=self.colors["primary"],
             hover_color=self.colors["primary_hover"],
             command=self._add_ai_website,
@@ -2398,26 +3199,115 @@ class MainApp(ctk.CTk):
             fg_color=self.colors["primary"]
         ).pack(side="left", padx=8)
 
-        # 有效期和数量
-        gen_frame = ctk.CTkFrame(code_card, fg_color="transparent")
-        gen_frame.grid(row=2, column=0, columnspan=3, sticky="w", padx=16, pady=8)
+        # 有效期输入（精确到秒）
+        expire_frame = ctk.CTkFrame(code_card, fg_color="transparent")
+        expire_frame.grid(row=2, column=0, columnspan=3, sticky="w", padx=16, pady=8)
 
         ctk.CTkLabel(
-            gen_frame,
+            expire_frame,
             text="有效期:",
             font=ctk.CTkFont(size=11, family="Microsoft YaHei UI"),
             text_color=(self.colors["text_secondary"], self.colors["text_secondary_dark"])
         ).pack(side="left")
 
-        self.code_expire_var = ctk.StringVar(value="永久")
-        ctk.CTkOptionMenu(
-            gen_frame,
-            values=["1天", "7天", "30天", "永久"],
-            variable=self.code_expire_var,
-            width=90,
+        # 天数输入
+        self.expire_days_var = ctk.StringVar(value="0")
+        ctk.CTkEntry(
+            expire_frame,
+            textvariable=self.expire_days_var,
+            width=45,
             height=32,
-            corner_radius=6
-        ).pack(side="left", padx=(8, 16))
+            corner_radius=8,
+            font=ctk.CTkFont(size=11, family="Microsoft YaHei UI"),
+            fg_color=(self.colors["bg_elevated"], self.colors["bg_elevated_dark"]),
+            border_color=(self.colors["border"], self.colors["border_dark"]),
+            justify="center"
+        ).pack(side="left", padx=(8, 2))
+        ctk.CTkLabel(
+            expire_frame,
+            text="天",
+            font=ctk.CTkFont(size=10, family="Microsoft YaHei UI"),
+            text_color=(self.colors["text_muted"], self.colors["text_muted_dark"])
+        ).pack(side="left", padx=(0, 6))
+
+        # 小时输入
+        self.expire_hours_var = ctk.StringVar(value="0")
+        ctk.CTkEntry(
+            expire_frame,
+            textvariable=self.expire_hours_var,
+            width=40,
+            height=32,
+            corner_radius=8,
+            font=ctk.CTkFont(size=11, family="Microsoft YaHei UI"),
+            fg_color=(self.colors["bg_elevated"], self.colors["bg_elevated_dark"]),
+            border_color=(self.colors["border"], self.colors["border_dark"]),
+            justify="center"
+        ).pack(side="left", padx=(0, 2))
+        ctk.CTkLabel(
+            expire_frame,
+            text="时",
+            font=ctk.CTkFont(size=10, family="Microsoft YaHei UI"),
+            text_color=(self.colors["text_muted"], self.colors["text_muted_dark"])
+        ).pack(side="left", padx=(0, 6))
+
+        # 分钟输入
+        self.expire_mins_var = ctk.StringVar(value="0")
+        ctk.CTkEntry(
+            expire_frame,
+            textvariable=self.expire_mins_var,
+            width=40,
+            height=32,
+            corner_radius=8,
+            font=ctk.CTkFont(size=11, family="Microsoft YaHei UI"),
+            fg_color=(self.colors["bg_elevated"], self.colors["bg_elevated_dark"]),
+            border_color=(self.colors["border"], self.colors["border_dark"]),
+            justify="center"
+        ).pack(side="left", padx=(0, 2))
+        ctk.CTkLabel(
+            expire_frame,
+            text="分",
+            font=ctk.CTkFont(size=10, family="Microsoft YaHei UI"),
+            text_color=(self.colors["text_muted"], self.colors["text_muted_dark"])
+        ).pack(side="left", padx=(0, 6))
+
+        # 秒数输入
+        self.expire_secs_var = ctk.StringVar(value="0")
+        ctk.CTkEntry(
+            expire_frame,
+            textvariable=self.expire_secs_var,
+            width=40,
+            height=32,
+            corner_radius=8,
+            font=ctk.CTkFont(size=11, family="Microsoft YaHei UI"),
+            fg_color=(self.colors["bg_elevated"], self.colors["bg_elevated_dark"]),
+            border_color=(self.colors["border"], self.colors["border_dark"]),
+            justify="center"
+        ).pack(side="left", padx=(0, 2))
+        ctk.CTkLabel(
+            expire_frame,
+            text="秒",
+            font=ctk.CTkFont(size=10, family="Microsoft YaHei UI"),
+            text_color=(self.colors["text_muted"], self.colors["text_muted_dark"])
+        ).pack(side="left", padx=(0, 12))
+
+        # 永久有效复选框
+        self.expire_permanent_var = ctk.BooleanVar(value=True)
+        ctk.CTkCheckBox(
+            expire_frame,
+            text="永久有效",
+            variable=self.expire_permanent_var,
+            font=ctk.CTkFont(size=11, family="Microsoft YaHei UI"),
+            text_color=(self.colors["text_secondary"], self.colors["text_secondary_dark"]),
+            fg_color=self.colors["primary"],
+            hover_color=self.colors["primary_hover"],
+            corner_radius=4,
+            border_width=2,
+            command=self._toggle_expire_inputs
+        ).pack(side="left")
+
+        # 数量和生成按钮
+        gen_frame = ctk.CTkFrame(code_card, fg_color="transparent")
+        gen_frame.grid(row=3, column=0, columnspan=3, sticky="w", padx=16, pady=8)
 
         ctk.CTkLabel(
             gen_frame,
@@ -2433,7 +3323,13 @@ class MainApp(ctk.CTk):
             variable=self.code_count_var,
             width=70,
             height=32,
-            corner_radius=6
+            corner_radius=8,
+            font=ctk.CTkFont(size=11, family="Microsoft YaHei UI"),
+            fg_color=(self.colors["bg_elevated"], self.colors["bg_elevated_dark"]),
+            button_color=(self.colors["bg_hover"], self.colors["bg_hover_dark"]),
+            button_hover_color=self.colors["primary"],
+            dropdown_fg_color=(self.colors["bg_base"], self.colors["bg_base_dark"]),
+            dropdown_hover_color=(self.colors["bg_hover"], self.colors["bg_hover_dark"])
         ).pack(side="left", padx=(8, 16))
 
         ctk.CTkButton(
@@ -2442,7 +3338,7 @@ class MainApp(ctk.CTk):
             font=ctk.CTkFont(size=11, family="Microsoft YaHei UI"),
             width=100,
             height=32,
-            corner_radius=6,
+            corner_radius=8,
             fg_color=self.colors["accent"],
             hover_color=self.colors["accent_hover"],
             command=self._generate_codes,
@@ -2457,17 +3353,80 @@ class MainApp(ctk.CTk):
             justify="left",
             anchor="w"
         )
-        self.code_result_label.grid(row=3, column=0, columnspan=3, sticky="w", padx=16, pady=8)
+        self.code_result_label.grid(row=4, column=0, columnspan=3, sticky="w", padx=16, pady=8)
+
+        # 兑换码列表标题和删除按钮
+        list_header = ctk.CTkFrame(code_card, fg_color="transparent")
+        list_header.grid(row=5, column=0, columnspan=3, sticky="ew", padx=16, pady=(0, 4))
+
+        ctk.CTkLabel(
+            list_header,
+            text="已生成的兑换码:",
+            font=ctk.CTkFont(size=11, family="Microsoft YaHei UI"),
+            text_color=(self.colors["text_secondary"], self.colors["text_secondary_dark"])
+        ).pack(side="left")
+
+        ctk.CTkButton(
+            list_header,
+            text="删除选中",
+            font=ctk.CTkFont(size=10, family="Microsoft YaHei UI"),
+            width=70,
+            height=26,
+            corner_radius=6,
+            fg_color=self.colors["error"],
+            hover_color="#DC2626",
+            command=self._delete_selected_code
+        ).pack(side="right")
+
+        ctk.CTkButton(
+            list_header,
+            text="刷新列表",
+            font=ctk.CTkFont(size=10, family="Microsoft YaHei UI"),
+            width=70,
+            height=26,
+            corner_radius=6,
+            fg_color="transparent",
+            hover_color=(self.colors["bg_hover"], self.colors["bg_hover_dark"]),
+            text_color=(self.colors["text_secondary"], self.colors["text_secondary_dark"]),
+            border_width=1,
+            border_color=(self.colors["border"], self.colors["border_dark"]),
+            command=self._refresh_codes_list
+        ).pack(side="right", padx=(0, 8))
 
         # 兑换码列表
         self.codes_listbox = ctk.CTkTextbox(
             code_card,
-            height=80,
+            height=100,
             font=ctk.CTkFont(family="Consolas", size=10),
             fg_color=(self.colors["bg_elevated"], self.colors["bg_elevated_dark"]),
-            corner_radius=6
+            corner_radius=8
         )
-        self.codes_listbox.grid(row=4, column=0, columnspan=3, sticky="ew", padx=16, pady=(0, 16))
+        self.codes_listbox.grid(row=6, column=0, columnspan=3, sticky="ew", padx=16, pady=(0, 8))
+
+        # 实时监控看板
+        monitor_frame = ctk.CTkFrame(
+            code_card,
+            fg_color=(self.colors["bg_elevated"], self.colors["bg_elevated_dark"]),
+            corner_radius=8
+        )
+        monitor_frame.grid(row=7, column=0, columnspan=3, sticky="ew", padx=16, pady=(0, 16))
+
+        ctk.CTkLabel(
+            monitor_frame,
+            text="⏱ 实时监控",
+            font=ctk.CTkFont(size=11, weight="bold", family="Microsoft YaHei UI"),
+            text_color=(self.colors["text_primary"], self.colors["text_primary_dark"])
+        ).pack(anchor="w", padx=12, pady=(8, 4))
+
+        self.monitor_label = ctk.CTkLabel(
+            monitor_frame,
+            text="加载中...",
+            font=ctk.CTkFont(family="Consolas", size=10),
+            text_color=(self.colors["text_secondary"], self.colors["text_secondary_dark"]),
+            justify="left",
+            anchor="w"
+        )
+        self.monitor_label.pack(fill="x", padx=12, pady=(0, 8))
 
         # 6. 操作按钮
         btn_frame = ctk.CTkFrame(self.config_scroll, fg_color="transparent")
@@ -2479,7 +3438,7 @@ class MainApp(ctk.CTk):
             font=ctk.CTkFont(size=12, family="Microsoft YaHei UI"),
             width=100,
             height=36,
-            corner_radius=6,
+            corner_radius=8,
             fg_color="transparent",
             hover_color=(self.colors["bg_hover"], self.colors["bg_hover_dark"]),
             text_color=(self.colors["text_secondary"], self.colors["text_secondary_dark"]),
@@ -2494,7 +3453,7 @@ class MainApp(ctk.CTk):
             font=ctk.CTkFont(size=12, family="Microsoft YaHei UI"),
             width=100,
             height=36,
-            corner_radius=6,
+            corner_radius=8,
             fg_color="transparent",
             hover_color=(self.colors["bg_hover"], self.colors["bg_hover_dark"]),
             text_color=(self.colors["text_muted"], self.colors["text_muted_dark"]),
@@ -2509,14 +3468,15 @@ class MainApp(ctk.CTk):
             font=ctk.CTkFont(size=12, family="Microsoft YaHei UI"),
             width=100,
             height=36,
-            corner_radius=6,
+            corner_radius=8,
             fg_color=self.colors["error"],
             hover_color="#DC2626",
             command=self._reset_license,
         ).pack(side="left", padx=8)
 
-        # 初始化列表
+        # 初始化列表和监控
         self._refresh_codes_list()
+        self._start_monitor_timer()
 
     # ==== 旧方法已删除 - 使用新的单页导航布局 ====
 
@@ -2529,67 +3489,168 @@ class MainApp(ctk.CTk):
             widget.destroy()
 
         templates = DataManager.get_all_templates()
+
+        # 更新徽章数量
+        if hasattr(self, 'template_count_badge'):
+            self.template_count_badge.configure(text=f"{len(templates)} 个模板")
+
+        if not templates:
+            # 空状态提示
+            empty_frame = ctk.CTkFrame(self.templates_scroll_frame, fg_color="transparent")
+            empty_frame.grid(row=0, column=0, sticky="nsew", pady=60)
+
+            ctk.CTkLabel(
+                empty_frame,
+                text="📭",
+                font=ctk.CTkFont(size=48)
+            ).pack()
+
+            ctk.CTkLabel(
+                empty_frame,
+                text="暂无模板",
+                font=ctk.CTkFont(size=16, weight="bold", family="Microsoft YaHei UI"),
+                text_color=(self.colors["text_muted"], self.colors["text_muted_dark"])
+            ).pack(pady=(12, 4))
+
+            ctk.CTkLabel(
+                empty_frame,
+                text="点击右上角添加你的第一个模板",
+                font=ctk.CTkFont(size=12, family="Microsoft YaHei UI"),
+                text_color=(self.colors["text_muted"], self.colors["text_muted_dark"])
+            ).pack()
+            return
+
         for i, (name, template) in enumerate(templates.items()):
             self._create_template_card(self.templates_scroll_frame, name, template, i)
 
     def _create_template_card(self, parent, name: str, template: dict, row: int):
-        """创建模板卡片"""
+        """创建模板卡片 - UI-UX-PRO-MAX 高级风格"""
         is_custom = name not in DEFAULT_TEMPLATES
 
-        card = ctk.CTkFrame(parent)
-        card.grid(row=row, column=0, sticky="ew", padx=5, pady=5)
+        card = ctk.CTkFrame(
+            parent,
+            fg_color=(self.colors["bg_base"], self.colors["bg_base_dark"]),
+            corner_radius=10,
+            border_width=1,
+            border_color=(self.colors["border"], self.colors["border_dark"])
+        )
+        card.grid(row=row, column=0, sticky="ew", padx=0, pady=6)
         card.grid_columnconfigure(1, weight=1)
 
-        # 左侧信息
-        info_frame = ctk.CTkFrame(card, fg_color="transparent")
-        info_frame.grid(row=0, column=0, sticky="w", padx=10, pady=5)
+        # 左侧图标区
+        icon_frame = ctk.CTkFrame(
+            card,
+            width=50,
+            height=50,
+            fg_color=(self.colors["bg_hover"], self.colors["bg_hover_dark"]),
+            corner_radius=8
+        )
+        icon_frame.grid(row=0, column=0, sticky="w", padx=16, pady=16)
+        icon_frame.grid_propagate(False)
 
         icon = "📝" if is_custom else "📁"
         ctk.CTkLabel(
-            info_frame,
-            text=f"{icon} {name}",
-            font=ctk.CTkFont(size=13, weight="bold"),
-        ).pack(anchor="w")
+            icon_frame,
+            text=icon,
+            font=ctk.CTkFont(size=22)
+        ).place(relx=0.5, rely=0.5, anchor="center")
 
+        # 中间信息区
+        info_frame = ctk.CTkFrame(card, fg_color="transparent")
+        info_frame.grid(row=0, column=1, sticky="ew", padx=(0, 16), pady=16)
+
+        # 标题行
+        title_row = ctk.CTkFrame(info_frame, fg_color="transparent")
+        title_row.pack(fill="x")
+
+        ctk.CTkLabel(
+            title_row,
+            text=name,
+            font=ctk.CTkFont(size=14, weight="bold", family="Microsoft YaHei UI"),
+            text_color=(self.colors["text_primary"], self.colors["text_primary_dark"])
+        ).pack(side="left")
+
+        # 类型标签
+        type_badge = ctk.CTkLabel(
+            title_row,
+            text="自定义" if is_custom else "内置",
+            font=ctk.CTkFont(size=9, family="Microsoft YaHei UI"),
+            text_color="white",
+            fg_color=self.colors["accent"] if is_custom else self.colors["primary"],
+            corner_radius=4,
+            padx=6,
+            pady=1
+        )
+        type_badge.pack(side="left", padx=(8, 0))
+
+        # 描述
         ctk.CTkLabel(
             info_frame,
             text=template.get("description", "自定义模板"),
-            text_color="gray",
-            font=ctk.CTkFont(size=11),
-        ).pack(anchor="w")
+            font=ctk.CTkFont(size=11, family="Microsoft YaHei UI"),
+            text_color=(self.colors["text_muted"], self.colors["text_muted_dark"]),
+            anchor="w"
+        ).pack(fill="x", pady=(4, 0))
 
         # 语言和框架标签
         lang = template.get("language", "")
         fw = template.get("framework", "")
         if lang or fw:
-            tag_text = f"[{lang}] {fw}" if lang and fw else lang or fw
-            ctk.CTkLabel(
-                info_frame,
-                text=tag_text,
-                text_color=("blue", "lightblue"),
-                font=ctk.CTkFont(size=10),
-            ).pack(anchor="w")
+            tag_frame = ctk.CTkFrame(info_frame, fg_color="transparent")
+            tag_frame.pack(fill="x", pady=(6, 0))
 
-        # 右侧按钮
+            if lang:
+                ctk.CTkLabel(
+                    tag_frame,
+                    text=lang,
+                    font=ctk.CTkFont(size=10, family="Microsoft YaHei UI"),
+                    text_color=(self.colors["text_secondary"], self.colors["text_secondary_dark"]),
+                    fg_color=(self.colors["bg_hover"], self.colors["bg_hover_dark"]),
+                    corner_radius=4,
+                    padx=8,
+                    pady=2
+                ).pack(side="left", padx=(0, 6))
+
+            if fw:
+                ctk.CTkLabel(
+                    tag_frame,
+                    text=fw,
+                    font=ctk.CTkFont(size=10, family="Microsoft YaHei UI"),
+                    text_color=(self.colors["text_secondary"], self.colors["text_secondary_dark"]),
+                    fg_color=(self.colors["bg_hover"], self.colors["bg_hover_dark"]),
+                    corner_radius=4,
+                    padx=8,
+                    pady=2
+                ).pack(side="left")
+
+        # 右侧按钮区
         btn_frame = ctk.CTkFrame(card, fg_color="transparent")
-        btn_frame.grid(row=0, column=1, sticky="e", padx=10, pady=5)
+        btn_frame.grid(row=0, column=2, sticky="e", padx=16, pady=16)
 
         ctk.CTkButton(
             btn_frame,
-            text="使用",
-            width=60,
+            text="使用模板",
+            font=ctk.CTkFont(size=12, family="Microsoft YaHei UI"),
+            width=85,
+            height=34,
+            corner_radius=8,
+            fg_color=self.colors["primary"],
+            hover_color=self.colors["primary_hover"],
             command=lambda n=name, t=template: self._use_template(n, t),
-        ).pack(side="left", padx=3)
+        ).pack(side="left", padx=(0, 8))
 
         if is_custom:
             ctk.CTkButton(
                 btn_frame,
                 text="删除",
+                font=ctk.CTkFont(size=12, family="Microsoft YaHei UI"),
                 width=60,
-                fg_color="red",
-                hover_color="darkred",
+                height=34,
+                corner_radius=8,
+                fg_color=self.colors["error"],
+                hover_color="#DC2626",
                 command=lambda n=name: self._delete_template(n),
-            ).pack(side="left", padx=3)
+            ).pack(side="left")
 
     def _add_template_dialog(self):
         """添加模板对话框"""
@@ -2626,8 +3687,31 @@ class MainApp(ctk.CTk):
                 self._show_message("成功", f"模板 \"{name}\" 已删除")
             dialog.destroy()
 
-        ctk.CTkButton(btn_frame, text="确定", fg_color="red", command=confirm).pack(side="left", padx=10)
-        ctk.CTkButton(btn_frame, text="取消", command=dialog.destroy).pack(side="left", padx=10)
+        ctk.CTkButton(
+            btn_frame,
+            text="确定",
+            font=ctk.CTkFont(size=12, family="Microsoft YaHei UI"),
+            width=80,
+            height=34,
+            corner_radius=8,
+            fg_color=self.colors["error"],
+            hover_color="#DC2626",
+            command=confirm
+        ).pack(side="left", padx=10)
+        ctk.CTkButton(
+            btn_frame,
+            text="取消",
+            font=ctk.CTkFont(size=12, family="Microsoft YaHei UI"),
+            width=80,
+            height=34,
+            corner_radius=8,
+            fg_color="transparent",
+            hover_color=(self.colors["bg_hover"], self.colors["bg_hover_dark"]),
+            text_color=(self.colors["text_secondary"], self.colors["text_secondary_dark"]),
+            border_width=1,
+            border_color=(self.colors["border"], self.colors["border_dark"]),
+            command=dialog.destroy
+        ).pack(side="left", padx=10)
 
     # _build_config_tab removed - using new _build_config_content()
 
@@ -2656,31 +3740,46 @@ class MainApp(ctk.CTk):
     def _generate_codes(self):
         """生成兑换码"""
         package_type = self.code_package_var.get()
-        expire_option = self.code_expire_var.get()
         count = int(self.code_count_var.get())
 
-        # 转换有效期
-        expire_days = None
-        if expire_option == "1天":
-            expire_days = 1
-        elif expire_option == "7天":
-            expire_days = 7
-        elif expire_option == "30天":
-            expire_days = 30
-        # 永久为 None
+        # 计算有效期（精确到秒）
+        expires_seconds = None
+        if not self.expire_permanent_var.get():
+            try:
+                days = int(self.expire_days_var.get() or 0)
+                hours = int(self.expire_hours_var.get() or 0)
+                mins = int(self.expire_mins_var.get() or 0)
+                secs = int(self.expire_secs_var.get() or 0)
+                expires_seconds = days * 86400 + hours * 3600 + mins * 60 + secs
+                if expires_seconds <= 0:
+                    self.code_result_label.configure(
+                        text="请设置有效期时间（至少1秒）",
+                        text_color=self.colors["error"]
+                    )
+                    return
+            except ValueError:
+                self.code_result_label.configure(
+                    text="请输入有效的数字",
+                    text_color=self.colors["error"]
+                )
+                return
 
         # 生成兑换码
-        codes = self.code_manager.generate_batch(package_type, count, expire_days)
+        codes = self.code_manager.generate_batch(package_type, count, expires_seconds=expires_seconds)
 
         package_name = "基础版" if package_type == "basic" else "专业版"
-        expire_text = expire_option
+        if expires_seconds:
+            expire_text = self.code_manager.format_remaining_time(expires_seconds)
+        else:
+            expire_text = "永久有效"
 
         self.code_result_label.configure(
             text=f"已生成 {len(codes)} 个 {package_name} 兑换码（{expire_text}）:\n" + "\n".join(codes),
-            text_color="green",
+            text_color=self.colors["success"],
         )
 
         self._refresh_codes_list()
+        self._start_monitor_timer()
 
     def _refresh_codes_list(self):
         """刷新兑换码列表"""
@@ -2688,6 +3787,8 @@ class MainApp(ctk.CTk):
             return
 
         codes = self.code_manager.get_all_codes()
+        # 存储当前码列表用于删除功能
+        self._current_codes = codes
 
         self.codes_listbox.configure(state="normal")
         self.codes_listbox.delete("0.0", "end")
@@ -2701,17 +3802,14 @@ class MainApp(ctk.CTk):
                 package_name = "基础版" if package_type == "basic" else "专业版"
                 status = "已使用" if code_info.get("is_used") else "可用"
 
-                if code_info.get("expires_at"):
-                    from datetime import datetime
-                    expires = datetime.fromisoformat(code_info["expires_at"])
-                    remaining = (expires - datetime.now()).days
-                    if remaining > 0:
-                        expire_text = f"{remaining}天后到期"
-                    elif remaining == 0:
-                        expire_text = "今天到期"
-                    else:
+                # 使用精确到秒的时间显示
+                remaining_secs = code_info.get("remaining_seconds")
+                if remaining_secs is not None:
+                    if remaining_secs <= 0:
                         expire_text = "已过期"
                         status = "已过期"
+                    else:
+                        expire_text = self.code_manager.format_remaining_time(remaining_secs)
                 else:
                     expire_text = "永久"
 
@@ -2725,6 +3823,99 @@ class MainApp(ctk.CTk):
         """重置授权（测试用）"""
         self.code_manager.reset_license()
         self.status_label.configure(text="✅ 授权已重置，重启应用后生效")
+
+    def _toggle_expire_inputs(self):
+        """切换有效期输入框状态"""
+        if self.expire_permanent_var.get():
+            # 永久有效，清空并禁用输入
+            self.expire_days_var.set("0")
+            self.expire_hours_var.set("0")
+            self.expire_mins_var.set("0")
+            self.expire_secs_var.set("0")
+
+    def _delete_selected_code(self):
+        """删除选中的兑换码"""
+        if not hasattr(self, "codes_listbox"):
+            return
+
+        # 获取选中的文本
+        try:
+            # 获取当前选中行
+            self.codes_listbox.configure(state="normal")
+            selected_text = self.codes_listbox.get("1.0", "end").strip()
+            self.codes_listbox.configure(state="disabled")
+
+            if not selected_text or selected_text == "暂无兑换码，请先生成":
+                self._show_message("提示", "没有可删除的兑换码")
+                return
+
+            # 获取第一行（最新的兑换码）
+            first_line = selected_text.split("\n")[0] if selected_text else ""
+            if not first_line:
+                return
+
+            # 提取兑换码（格式：CODE  [套餐]  [状态]  [时间]）
+            code = first_line.split("  ")[0].strip()
+
+            if not code:
+                self._show_message("提示", "无法识别兑换码")
+                return
+
+            # 确认删除
+            if self.code_manager.delete_code(code):
+                self._show_message("成功", f"已删除兑换码: {code}")
+                self._refresh_codes_list()
+                self._update_monitor()
+            else:
+                self._show_message("错误", "删除失败，兑换码可能不存在")
+
+        except Exception as e:
+            self._show_message("错误", f"删除失败: {str(e)}")
+
+    def _start_monitor_timer(self):
+        """启动实时监控定时器"""
+        if hasattr(self, "_monitor_timer_id"):
+            self.after_cancel(self._monitor_timer_id)
+        self._update_monitor()
+
+    def _update_monitor(self):
+        """更新实时监控面板"""
+        if not hasattr(self, "monitor_label"):
+            return
+
+        codes = self.code_manager.get_all_codes()
+
+        if not codes:
+            self.monitor_label.configure(text="暂无兑换码")
+            return
+
+        # 统计信息
+        total = len(codes)
+        available = sum(1 for c in codes if not c.get("is_used") and (c.get("remaining_seconds") is None or c.get("remaining_seconds", 0) > 0))
+        used = sum(1 for c in codes if c.get("is_used"))
+        expired = sum(1 for c in codes if c.get("remaining_seconds") is not None and c.get("remaining_seconds", 0) <= 0)
+
+        # 找出即将到期的码（24小时内）
+        expiring_soon = []
+        for c in codes:
+            remaining = c.get("remaining_seconds")
+            if remaining is not None and 0 < remaining <= 86400 and not c.get("is_used"):
+                expiring_soon.append((c["code"], remaining))
+
+        # 构建显示文本
+        lines = [f"总计: {total}  |  可用: {available}  |  已用: {used}  |  过期: {expired}"]
+
+        if expiring_soon:
+            lines.append("━" * 40)
+            lines.append("⚠ 即将到期 (24小时内):")
+            for code, remaining in sorted(expiring_soon, key=lambda x: x[1])[:5]:
+                time_str = self.code_manager.format_remaining_time(remaining)
+                lines.append(f"  {code[:8]}...  →  {time_str}")
+
+        self.monitor_label.configure(text="\n".join(lines))
+
+        # 每秒更新一次
+        self._monitor_timer_id = self.after(1000, self._update_monitor)
 
     def _on_fw_lang_changed(self, lang: str):
         """框架语言变更事件"""
@@ -3070,7 +4261,10 @@ class MainApp(ctk.CTk):
             text="GUI 窗口程序",
             variable=self.beginner_type_var,
             value="GUI程序",
-            font=ctk.CTkFont(size=11, family="Microsoft YaHei UI")
+            font=ctk.CTkFont(size=11, family="Microsoft YaHei UI"),
+            fg_color=self.colors["primary"],
+            hover_color=self.colors["primary_hover"],
+            text_color=(self.colors["text_primary"], self.colors["text_primary_dark"])
         ).pack(side="left", padx=(0, 15))
 
         ctk.CTkRadioButton(
@@ -3078,7 +4272,10 @@ class MainApp(ctk.CTk):
             text="命令行程序",
             variable=self.beginner_type_var,
             value="命令行程序",
-            font=ctk.CTkFont(size=11, family="Microsoft YaHei UI")
+            font=ctk.CTkFont(size=11, family="Microsoft YaHei UI"),
+            fg_color=self.colors["primary"],
+            hover_color=self.colors["primary_hover"],
+            text_color=(self.colors["text_primary"], self.colors["text_primary_dark"])
         ).pack(side="left")
 
         # 输出位置
@@ -3096,7 +4293,11 @@ class MainApp(ctk.CTk):
             placeholder_text="exe 文件保存位置",
             height=40,
             corner_radius=8,
-            font=ctk.CTkFont(size=11, family="Microsoft YaHei UI")
+            font=ctk.CTkFont(size=11, family="Microsoft YaHei UI"),
+            fg_color=(self.colors["bg_elevated"], self.colors["bg_elevated_dark"]),
+            border_color=(self.colors["border"], self.colors["border_dark"]),
+            text_color=(self.colors["text_primary"], self.colors["text_primary_dark"]),
+            placeholder_text_color=(self.colors["text_muted"], self.colors["text_muted_dark"])
         ).grid(row=4, column=1, sticky="ew", padx=8, pady=(8, 12))
 
         ctk.CTkButton(
@@ -3216,210 +4417,345 @@ class MainApp(ctk.CTk):
         self.after(500, self._check_environment)
 
     def _build_developer_mode(self):
-        """构建独立开发模式界面（保持原有功能）"""
-        self.developer_frame = ctk.CTkFrame(self.packager_container)
+        """构建独立开发模式界面 - 统一紫色主题风格"""
+        self.developer_frame = ctk.CTkFrame(
+            self.packager_container,
+            fg_color="transparent"
+        )
         self.developer_frame.grid_columnconfigure(0, weight=1)
-        self.developer_frame.grid_rowconfigure(5, weight=1)
+        self.developer_frame.grid_rowconfigure(2, weight=1)
 
-        # 重要提示
-        tip_frame = ctk.CTkFrame(self.developer_frame, fg_color=("gray85", "gray20"))
-        tip_frame.grid(row=0, column=0, sticky="ew", padx=5, pady=5)
+        # ===== 第一部分：提示卡片 =====
+        tip_card = ctk.CTkFrame(
+            self.developer_frame,
+            fg_color=(self.colors["primary_subtle"], "#1e1b4b"),
+            corner_radius=10,
+            border_width=1,
+            border_color=(self.colors["primary_light"], self.colors["primary"])
+        )
+        tip_card.grid(row=0, column=0, sticky="ew", padx=0, pady=(0, 12))
 
         ctk.CTkLabel(
-            tip_frame,
-            text="💡 提示：选择入口文件后点击「AI 智能分析」自动检测依赖和配置",
-            font=ctk.CTkFont(size=12),
-            text_color=("blue", "cyan"),
-        ).pack(padx=10, pady=8)
+            tip_card,
+            text="💡 选择入口文件后点击「AI 智能分析」自动检测依赖和配置",
+            font=ctk.CTkFont(size=12, family="Microsoft YaHei UI"),
+            text_color=(self.colors["primary"], self.colors["primary_light"]),
+        ).pack(padx=15, pady=12)
 
-        # 脚本选择
-        script_frame = ctk.CTkFrame(self.developer_frame)
-        script_frame.grid(row=1, column=0, sticky="ew", padx=5, pady=5)
-        script_frame.grid_columnconfigure(1, weight=1)
+        # ===== 第二部分：配置卡片（包含 AI 分析结果）=====
+        config_card = ctk.CTkFrame(
+            self.developer_frame,
+            fg_color=(self.colors["surface_light"], self.colors["surface_dark"]),
+            corner_radius=12,
+            border_width=1,
+            border_color=(self.colors["border_light"], self.colors["border_dark"])
+        )
+        config_card.grid(row=1, column=0, sticky="ew", padx=0, pady=(0, 12))
+        config_card.grid_columnconfigure(0, weight=1)
+        config_card.grid_columnconfigure(1, weight=1)
 
-        ctk.CTkLabel(script_frame, text="入口文件:").grid(row=0, column=0, sticky="w", padx=10, pady=10)
+        # 左侧：基本配置
+        left_frame = ctk.CTkFrame(config_card, fg_color="transparent")
+        left_frame.grid(row=0, column=0, sticky="nsew", padx=(15, 8), pady=15)
+        left_frame.grid_columnconfigure(1, weight=1)
+
+        ctk.CTkLabel(
+            left_frame,
+            text="📦 打包配置",
+            font=ctk.CTkFont(size=13, weight="bold", family="Microsoft YaHei UI"),
+            text_color=(self.colors["text_light"], self.colors["text_dark"])
+        ).grid(row=0, column=0, columnspan=3, sticky="w", pady=(0, 10))
+
+        # 入口文件
+        ctk.CTkLabel(
+            left_frame,
+            text="入口文件:",
+            font=ctk.CTkFont(size=11, family="Microsoft YaHei UI"),
+            text_color=(self.colors["text_light"], self.colors["text_dark"])
+        ).grid(row=1, column=0, sticky="w", pady=6)
 
         self.script_path_var = ctk.StringVar()
         ctk.CTkEntry(
-            script_frame,
+            left_frame,
             textvariable=self.script_path_var,
-            placeholder_text="选择包含 if __name__ == '__main__' 的入口文件 (如 main.py)",
-        ).grid(row=0, column=1, sticky="ew", padx=5, pady=10)
+            placeholder_text="选择入口文件 (main.py)",
+            height=36,
+            corner_radius=8,
+            font=ctk.CTkFont(size=11, family="Microsoft YaHei UI"),
+            fg_color=(self.colors["bg_elevated"], self.colors["bg_elevated_dark"]),
+            border_color=(self.colors["border"], self.colors["border_dark"]),
+            text_color=(self.colors["text_primary"], self.colors["text_primary_dark"]),
+            placeholder_text_color=(self.colors["text_muted"], self.colors["text_muted_dark"])
+        ).grid(row=1, column=1, sticky="ew", padx=8, pady=6)
+
+        btn_frame_1 = ctk.CTkFrame(left_frame, fg_color="transparent")
+        btn_frame_1.grid(row=1, column=2, sticky="e", pady=6)
 
         ctk.CTkButton(
-            script_frame,
-            text="📂 选择",
-            width=80,
+            btn_frame_1,
+            text="📂",
+            width=36,
+            height=36,
+            corner_radius=8,
+            fg_color=(self.colors["bg_light"], self.colors["bg_dark"]),
+            hover_color=(self.colors["border_light"], self.colors["border_dark"]),
+            text_color=(self.colors["text_light"], self.colors["text_dark"]),
+            border_width=1,
+            border_color=(self.colors["border_light"], self.colors["border_dark"]),
             command=self._select_script,
-        ).grid(row=0, column=2, padx=5, pady=10)
+        ).pack(side="left", padx=(0, 5))
 
         ctk.CTkButton(
-            script_frame,
-            text="🤖 AI 智能分析",
-            width=120,
-            fg_color=("green", "darkgreen"),
-            hover_color=("darkgreen", "green"),
+            btn_frame_1,
+            text="🤖 AI分析",
+            width=80,
+            height=36,
+            corner_radius=8,
+            fg_color=(self.colors["accent"], self.colors["accent"]),
+            hover_color=("#DB2777", "#DB2777"),
+            font=ctk.CTkFont(size=11, weight="bold", family="Microsoft YaHei UI"),
             command=self._ai_analyze_project,
-        ).grid(row=0, column=3, padx=5, pady=10)
+        ).pack(side="left")
 
-        # 输出配置
-        output_frame = ctk.CTkFrame(self.developer_frame)
-        output_frame.grid(row=2, column=0, sticky="ew", padx=5, pady=5)
-        output_frame.grid_columnconfigure(1, weight=1)
-
-        ctk.CTkLabel(output_frame, text="输出目录:").grid(row=0, column=0, sticky="w", padx=10, pady=10)
+        # 输出目录
+        ctk.CTkLabel(
+            left_frame,
+            text="输出目录:",
+            font=ctk.CTkFont(size=11, family="Microsoft YaHei UI"),
+            text_color=(self.colors["text_light"], self.colors["text_dark"])
+        ).grid(row=2, column=0, sticky="w", pady=6)
 
         self.output_dir_var = ctk.StringVar(value=self.settings.get("pyinstaller_output_dir", ""))
         ctk.CTkEntry(
-            output_frame,
+            left_frame,
             textvariable=self.output_dir_var,
-        ).grid(row=0, column=1, sticky="ew", padx=5, pady=10)
+            placeholder_text="exe 保存位置",
+            height=36,
+            corner_radius=8,
+            font=ctk.CTkFont(size=11, family="Microsoft YaHei UI"),
+            fg_color=(self.colors["bg_elevated"], self.colors["bg_elevated_dark"]),
+            border_color=(self.colors["border"], self.colors["border_dark"]),
+            text_color=(self.colors["text_primary"], self.colors["text_primary_dark"]),
+            placeholder_text_color=(self.colors["text_muted"], self.colors["text_muted_dark"])
+        ).grid(row=2, column=1, sticky="ew", padx=8, pady=6)
 
         ctk.CTkButton(
-            output_frame,
-            text="📂 选择",
-            width=80,
+            left_frame,
+            text="📂",
+            width=36,
+            height=36,
+            corner_radius=8,
+            fg_color=(self.colors["bg_light"], self.colors["bg_dark"]),
+            hover_color=(self.colors["border_light"], self.colors["border_dark"]),
+            text_color=(self.colors["text_light"], self.colors["text_dark"]),
+            border_width=1,
+            border_color=(self.colors["border_light"], self.colors["border_dark"]),
             command=self._select_output_dir,
-        ).grid(row=0, column=2, padx=5, pady=10)
+        ).grid(row=2, column=2, sticky="w", pady=6)
 
-        ctk.CTkLabel(output_frame, text="程序名称:").grid(row=1, column=0, sticky="w", padx=10, pady=10)
+        # 程序名称 + 图标
+        ctk.CTkLabel(
+            left_frame,
+            text="程序名称:",
+            font=ctk.CTkFont(size=11, family="Microsoft YaHei UI"),
+            text_color=(self.colors["text_light"], self.colors["text_dark"])
+        ).grid(row=3, column=0, sticky="w", pady=6)
+
+        name_icon_frame = ctk.CTkFrame(left_frame, fg_color="transparent")
+        name_icon_frame.grid(row=3, column=1, columnspan=2, sticky="ew", pady=6)
 
         self.program_name_var = ctk.StringVar(value="MyApp")
         ctk.CTkEntry(
-            output_frame,
+            name_icon_frame,
             textvariable=self.program_name_var,
-            width=200,
-        ).grid(row=1, column=1, sticky="w", padx=5, pady=10)
-
-        # 打包选项
-        options_frame = ctk.CTkFrame(self.developer_frame)
-        options_frame.grid(row=3, column=0, sticky="ew", padx=5, pady=5)
-        options_frame.grid_columnconfigure(1, weight=1)
-
-        # 左侧基本选项
-        left_options = ctk.CTkFrame(options_frame, fg_color="transparent")
-        left_options.grid(row=0, column=0, sticky="nw", padx=10, pady=5)
+            placeholder_text="程序名",
+            width=120,
+            height=36,
+            corner_radius=8,
+            font=ctk.CTkFont(size=11, family="Microsoft YaHei UI"),
+            fg_color=(self.colors["bg_elevated"], self.colors["bg_elevated_dark"]),
+            border_color=(self.colors["border"], self.colors["border_dark"]),
+            text_color=(self.colors["text_primary"], self.colors["text_primary_dark"]),
+            placeholder_text_color=(self.colors["text_muted"], self.colors["text_muted_dark"])
+        ).pack(side="left", padx=(8, 15))
 
         ctk.CTkLabel(
-            left_options,
-            text="基本选项",
-            font=ctk.CTkFont(weight="bold"),
-        ).grid(row=0, column=0, sticky="w", pady=5)
-
-        self.onefile_var = ctk.BooleanVar(value=True)
-        ctk.CTkCheckBox(
-            left_options,
-            text="单文件模式 (-F)",
-            variable=self.onefile_var,
-        ).grid(row=1, column=0, sticky="w", pady=3)
-
-        self.noconsole_var = ctk.BooleanVar(value=False)
-        ctk.CTkCheckBox(
-            left_options,
-            text="无控制台窗口 (-w)",
-            variable=self.noconsole_var,
-        ).grid(row=2, column=0, sticky="w", pady=3)
-
-        # 图标选择
-        icon_frame = ctk.CTkFrame(left_options, fg_color="transparent")
-        icon_frame.grid(row=3, column=0, sticky="w", pady=5)
-
-        ctk.CTkLabel(icon_frame, text="程序图标:").pack(side="left")
+            name_icon_frame,
+            text="图标:",
+            font=ctk.CTkFont(size=11, family="Microsoft YaHei UI"),
+            text_color=(self.colors["text_light"], self.colors["text_dark"])
+        ).pack(side="left")
 
         self.icon_path_var = ctk.StringVar()
         ctk.CTkEntry(
-            icon_frame,
+            name_icon_frame,
             textvariable=self.icon_path_var,
-            width=150,
-            placeholder_text="可选 .ico 文件",
-        ).pack(side="left", padx=5)
+            width=120,
+            height=36,
+            corner_radius=8,
+            placeholder_text="可选 .ico",
+            font=ctk.CTkFont(size=11, family="Microsoft YaHei UI"),
+            fg_color=(self.colors["bg_elevated"], self.colors["bg_elevated_dark"]),
+            border_color=(self.colors["border"], self.colors["border_dark"]),
+            text_color=(self.colors["text_primary"], self.colors["text_primary_dark"]),
+            placeholder_text_color=(self.colors["text_muted"], self.colors["text_muted_dark"])
+        ).pack(side="left", padx=8)
 
         ctk.CTkButton(
-            icon_frame,
+            name_icon_frame,
             text="选择",
-            width=60,
+            width=50,
+            height=36,
+            corner_radius=8,
+            fg_color=(self.colors["bg_light"], self.colors["bg_dark"]),
+            hover_color=(self.colors["border_light"], self.colors["border_dark"]),
+            text_color=(self.colors["text_light"], self.colors["text_dark"]),
+            border_width=1,
+            border_color=(self.colors["border_light"], self.colors["border_dark"]),
+            font=ctk.CTkFont(size=11, family="Microsoft YaHei UI"),
             command=self._select_icon,
-        ).pack(side="left", padx=5)
+        ).pack(side="left")
 
-        # 右侧 AI 分析结果
-        right_options = ctk.CTkFrame(options_frame)
-        right_options.grid(row=0, column=1, sticky="nsew", padx=10, pady=5)
-        right_options.grid_columnconfigure(0, weight=1)
-        right_options.grid_rowconfigure(1, weight=1)
+        # 打包选项
+        options_frame = ctk.CTkFrame(left_frame, fg_color="transparent")
+        options_frame.grid(row=4, column=0, columnspan=3, sticky="w", pady=(10, 0))
+
+        self.onefile_var = ctk.BooleanVar(value=True)
+        ctk.CTkCheckBox(
+            options_frame,
+            text="单文件 (-F)",
+            variable=self.onefile_var,
+            font=ctk.CTkFont(size=11, family="Microsoft YaHei UI"),
+            text_color=(self.colors["text_light"], self.colors["text_dark"]),
+            fg_color=(self.colors["primary"], self.colors["primary"]),
+            hover_color=(self.colors["primary_dark"], self.colors["primary_dark"]),
+        ).pack(side="left", padx=(0, 20))
+
+        self.noconsole_var = ctk.BooleanVar(value=False)
+        ctk.CTkCheckBox(
+            options_frame,
+            text="无控制台 (-w)",
+            variable=self.noconsole_var,
+            font=ctk.CTkFont(size=11, family="Microsoft YaHei UI"),
+            text_color=(self.colors["text_light"], self.colors["text_dark"]),
+            fg_color=(self.colors["primary"], self.colors["primary"]),
+            hover_color=(self.colors["primary_dark"], self.colors["primary_dark"]),
+        ).pack(side="left")
+
+        # 右侧：AI 分析结果
+        right_frame = ctk.CTkFrame(
+            config_card,
+            fg_color=(self.colors["bg_light"], self.colors["bg_dark"]),
+            corner_radius=10
+        )
+        right_frame.grid(row=0, column=1, sticky="nsew", padx=(8, 15), pady=15)
+        right_frame.grid_columnconfigure(0, weight=1)
+        right_frame.grid_rowconfigure(1, weight=1)
 
         ctk.CTkLabel(
-            right_options,
+            right_frame,
             text="🤖 AI 分析结果",
-            font=ctk.CTkFont(weight="bold"),
-        ).grid(row=0, column=0, sticky="w", padx=10, pady=5)
+            font=ctk.CTkFont(size=12, weight="bold", family="Microsoft YaHei UI"),
+            text_color=(self.colors["text_light"], self.colors["text_dark"])
+        ).grid(row=0, column=0, sticky="w", padx=12, pady=(10, 5))
 
         self.ai_result_textbox = ctk.CTkTextbox(
-            right_options,
-            height=120,
+            right_frame,
+            corner_radius=8,
             font=ctk.CTkFont(family="Consolas", size=10),
+            fg_color=(self.colors["surface_light"], self.colors["surface_dark"]),
         )
-        self.ai_result_textbox.grid(row=1, column=0, sticky="nsew", padx=5, pady=5)
-        self.ai_result_textbox.insert("1.0", "点击「AI 智能分析」按钮分析项目依赖...\n\n提示：AI 会自动检测：\n• 需要导入的模块\n• 需要收集的数据文件\n• CustomTkinter 等特殊库的配置")
+        self.ai_result_textbox.grid(row=1, column=0, sticky="nsew", padx=10, pady=(0, 10))
+        self.ai_result_textbox.insert("1.0", "点击「AI分析」按钮分析项目...\n\n• 自动检测依赖模块\n• 自动检测数据文件\n• 自动配置特殊库")
         self.ai_result_textbox.configure(state="disabled")
 
-        # 打包按钮区
+        # ===== 打包按钮区 =====
         btn_frame = ctk.CTkFrame(self.developer_frame, fg_color="transparent")
-        btn_frame.grid(row=4, column=0, sticky="ew", padx=5, pady=10)
+        btn_frame.grid(row=1, column=0, sticky="se", padx=0, pady=(0, 12))
 
         ctk.CTkButton(
             btn_frame,
             text="🚀 开始打包",
-            font=ctk.CTkFont(size=14, weight="bold"),
-            width=150,
-            height=40,
+            font=ctk.CTkFont(size=13, weight="bold", family="Microsoft YaHei UI"),
+            width=140,
+            height=42,
+            corner_radius=10,
+            fg_color=(self.colors["primary"], self.colors["primary"]),
+            hover_color=(self.colors["primary_dark"], self.colors["primary_dark"]),
             command=self._start_packaging,
-        ).pack(side="left", padx=5)
+        ).pack(side="left", padx=(0, 8))
 
         ctk.CTkButton(
             btn_frame,
-            text="🧠 AI 分析后打包",
-            font=ctk.CTkFont(size=14, weight="bold"),
+            text="🧠 AI分析后打包",
+            font=ctk.CTkFont(size=13, weight="bold", family="Microsoft YaHei UI"),
             width=150,
-            height=40,
-            fg_color=("purple", "darkviolet"),
-            hover_color=("darkviolet", "purple"),
+            height=42,
+            corner_radius=10,
+            fg_color=(self.colors["accent"], self.colors["accent"]),
+            hover_color=("#DB2777", "#DB2777"),
             command=self._ai_analyze_and_package,
-        ).pack(side="left", padx=5)
+        ).pack(side="left", padx=(0, 8))
 
         ctk.CTkButton(
             btn_frame,
-            text="📂 打开输出目录",
-            width=120,
+            text="📂 打开目录",
+            font=ctk.CTkFont(size=11, family="Microsoft YaHei UI"),
+            width=100,
+            height=42,
+            corner_radius=10,
+            fg_color=(self.colors["bg_light"], self.colors["bg_dark"]),
+            hover_color=(self.colors["border_light"], self.colors["border_dark"]),
+            text_color=(self.colors["text_light"], self.colors["text_dark"]),
+            border_width=1,
+            border_color=(self.colors["border_light"], self.colors["border_dark"]),
             command=self._open_output_dir,
-        ).pack(side="left", padx=5)
+        ).pack(side="left")
 
-        # 打包日志
-        log_frame = ctk.CTkFrame(self.developer_frame)
-        log_frame.grid(row=5, column=0, sticky="nsew", padx=5, pady=5)
-        log_frame.grid_columnconfigure(0, weight=1)
-        log_frame.grid_rowconfigure(1, weight=1)
+        # ===== 第三部分：打包日志 =====
+        log_card = ctk.CTkFrame(
+            self.developer_frame,
+            fg_color=(self.colors["surface_light"], self.colors["surface_dark"]),
+            corner_radius=12,
+            border_width=1,
+            border_color=(self.colors["border_light"], self.colors["border_dark"])
+        )
+        log_card.grid(row=2, column=0, sticky="nsew", padx=0, pady=0)
+        log_card.grid_columnconfigure(0, weight=1)
+        log_card.grid_rowconfigure(1, weight=1)
 
-        log_header = ctk.CTkFrame(log_frame, fg_color="transparent")
-        log_header.grid(row=0, column=0, sticky="ew", padx=10, pady=5)
+        log_header = ctk.CTkFrame(log_card, fg_color="transparent")
+        log_header.grid(row=0, column=0, sticky="ew", padx=12, pady=10)
 
         ctk.CTkLabel(
             log_header,
             text="📋 打包日志",
-            font=ctk.CTkFont(weight="bold"),
+            font=ctk.CTkFont(size=12, weight="bold", family="Microsoft YaHei UI"),
+            text_color=(self.colors["text_light"], self.colors["text_dark"])
         ).pack(side="left")
 
         ctk.CTkButton(
             log_header,
-            text="清空日志",
-            width=80,
+            text="清空",
+            width=60,
+            height=28,
+            corner_radius=6,
+            fg_color="transparent",
+            hover_color=(self.colors["bg_light"], self.colors["bg_dark"]),
+            text_color=(self.colors["text_muted_light"], self.colors["text_muted_dark"]),
+            border_width=1,
+            border_color=(self.colors["border_light"], self.colors["border_dark"]),
+            font=ctk.CTkFont(size=10, family="Microsoft YaHei UI"),
             command=lambda: self.pack_log_textbox.delete("1.0", "end"),
         ).pack(side="right")
 
         self.pack_log_textbox = ctk.CTkTextbox(
-            log_frame,
+            log_card,
             font=ctk.CTkFont(family="Consolas", size=10),
+            corner_radius=8,
+            fg_color=(self.colors["bg_light"], self.colors["bg_dark"]),
         )
-        self.pack_log_textbox.grid(row=1, column=0, sticky="nsew", padx=5, pady=5)
+        self.pack_log_textbox.grid(row=1, column=0, sticky="nsew", padx=12, pady=(0, 12))
 
     def _on_packager_mode_changed(self, mode: str):
         """打包模式切换"""
@@ -3502,8 +4838,9 @@ class MainApp(ctk.CTk):
                 self.after(0, on_complete)
 
             except Exception as e:
-                def on_error():
-                    self._append_beginner_log(f"❌ 安装出错: {e}")
+                error_msg = str(e)
+                def on_error(msg=error_msg):
+                    self._append_beginner_log(f"❌ 安装出错: {msg}")
                     self.install_btn.configure(state="normal", text="📦 重试安装")
 
                 self.after(0, on_error)
@@ -3613,10 +4950,11 @@ class MainApp(ctk.CTk):
                 self.after(0, on_complete)
 
             except Exception as e:
-                def on_error():
+                error_msg = str(e)
+                def on_error(msg=error_msg):
                     self.beginner_pack_btn.configure(state="normal", text="🚀 一键打包")
-                    self._append_beginner_log(f"❌ 打包出错: {e}")
-                    self._show_message("错误", f"打包出错: {e}")
+                    self._append_beginner_log(f"❌ 打包出错: {msg}")
+                    self._show_message("错误", f"打包出错: {msg}")
 
                 self.after(0, on_error)
 
@@ -3717,10 +5055,11 @@ class MainApp(ctk.CTk):
                 self.after(0, on_complete)
 
             except Exception as e:
-                def on_error():
+                error_msg = str(e)
+                def on_error(msg=error_msg):
                     self.beginner_ai_pack_btn.configure(state="normal", text="🧠 AI分析后打包")
-                    self._append_beginner_log(f"❌ AI 打包出错: {e}")
-                    self._show_message("错误", f"AI 打包出错: {e}")
+                    self._append_beginner_log(f"❌ AI 打包出错: {msg}")
+                    self._show_message("错误", f"AI 打包出错: {msg}")
 
                 self.after(0, on_error)
 
@@ -3766,9 +5105,10 @@ class MainApp(ctk.CTk):
                 self.after(0, on_success)
 
             except Exception as e:
-                def on_error():
-                    self._append_pack_log(f"❌ AI 分析失败: {e}")
-                    self._show_message("错误", f"AI 分析失败: {e}")
+                error_msg = str(e)
+                def on_error(msg=error_msg):
+                    self._append_pack_log(f"❌ AI 分析失败: {msg}")
+                    self._show_message("错误", f"AI 分析失败: {msg}")
 
                 self.after(0, on_error)
 
@@ -3861,9 +5201,10 @@ class MainApp(ctk.CTk):
                 self.after(0, on_complete)
 
             except Exception as e:
-                def on_error():
-                    self._append_pack_log(f"❌ 打包失败: {e}")
-                    self._show_message("错误", f"打包失败: {e}")
+                error_msg = str(e)
+                def on_error(msg=error_msg):
+                    self._append_pack_log(f"❌ 打包失败: {msg}")
+                    self._show_message("错误", f"打包失败: {msg}")
 
                 self.after(0, on_error)
 
@@ -4152,6 +5493,77 @@ class MainApp(ctk.CTk):
         text = self.idea_textbox.get("1.0", "end-1c")
         count = len(text.strip())
         self.char_count_label.configure(text=f"{count} 字")
+
+    def _optimize_input(self):
+        """AI优化用户输入 - 使用haiku 4.5专业优化文本"""
+        text = self.idea_textbox.get("1.0", "end-1c").strip()
+
+        if not text:
+            self._show_message("提示", "请先输入需要优化的内容")
+            return
+
+        if not self.api_config.is_configured():
+            self._show_message("错误", "请先在设置中配置API密钥")
+            return
+
+        # 禁用按钮防止重复点击
+        self.optimize_btn.configure(state="disabled", text="优化中...")
+        self.status_label.configure(text="AI优化中...")
+
+        def worker():
+            try:
+                import anthropic
+
+                # 使用haiku 4.5模型进行优化
+                client = anthropic.Anthropic(
+                    api_key=self.api_config.api_key,
+                    base_url=self.api_config.base_url
+                )
+
+                optimize_prompt = f"""你是一个专业的技术文档优化专家。请将以下用户输入优化为更专业、清晰的技术需求描述。
+
+要求：
+1. 保持原意不变，不要添加用户没有提到的技术或功能
+2. 使用专业术语，但保持简洁
+3. 结构化表达，条理清晰
+4. 字数控制在原文的1.2倍以内
+5. 如果是中文就用中文回复，英文就用英文
+
+用户原文：
+{text}
+
+请直接输出优化后的文本，不要包含任何解释或前言："""
+
+                response = client.messages.create(
+                    model="claude-haiku-4-5-20251001",  # 使用haiku 4.5
+                    max_tokens=1024,
+                    messages=[
+                        {"role": "user", "content": optimize_prompt}
+                    ]
+                )
+
+                optimized_text = response.content[0].text.strip()
+
+                def on_success():
+                    # 更新文本框内容
+                    self.idea_textbox.delete("1.0", "end")
+                    self.idea_textbox.insert("1.0", optimized_text)
+                    self._update_char_count()
+
+                    self.optimize_btn.configure(state="normal", text="AI优化")
+                    self.status_label.configure(text="✅ 输入已优化")
+
+                self.after(0, on_success)
+
+            except Exception as e:
+                def on_error():
+                    self.optimize_btn.configure(state="normal", text="AI优化")
+                    self.status_label.configure(text="❌ 优化失败")
+                    self._show_message("错误", f"优化失败: {str(e)}")
+
+                self.after(0, on_error)
+
+        threading.Thread(target=worker, daemon=True).start()
 
     def _update_api_status(self):
         """更新API状态"""
@@ -4472,6 +5884,37 @@ class MainApp(ctk.CTk):
             widget.destroy()
 
         history = DataManager.load_history()
+
+        # 更新徽章数量
+        if hasattr(self, 'history_count_badge'):
+            self.history_count_badge.configure(text=f"{len(history)} 条记录")
+
+        if not history:
+            # 空状态提示
+            empty_frame = ctk.CTkFrame(self.history_frame, fg_color="transparent")
+            empty_frame.grid(row=0, column=0, sticky="nsew", pady=60)
+
+            ctk.CTkLabel(
+                empty_frame,
+                text="📭",
+                font=ctk.CTkFont(size=48)
+            ).pack()
+
+            ctk.CTkLabel(
+                empty_frame,
+                text="暂无历史记录",
+                font=ctk.CTkFont(size=16, weight="bold", family="Microsoft YaHei UI"),
+                text_color=(self.colors["text_muted"], self.colors["text_muted_dark"])
+            ).pack(pady=(12, 4))
+
+            ctk.CTkLabel(
+                empty_frame,
+                text="生成提示词后会自动保存到这里",
+                font=ctk.CTkFont(size=12, family="Microsoft YaHei UI"),
+                text_color=(self.colors["text_muted"], self.colors["text_muted_dark"])
+            ).pack()
+            return
+
         # 倒序显示，最新的在前面
         for i, record in enumerate(reversed(history)):
             # 计算实际索引（因为是倒序，需要转换）
@@ -4479,47 +5922,103 @@ class MainApp(ctk.CTk):
             self._create_history_item(i, record, actual_index)
 
     def _create_history_item(self, row: int, record: dict, actual_index: int):
-        """创建历史记录项"""
-        item = ctk.CTkFrame(self.history_frame)
-        item.grid(row=row, column=0, sticky="ew", padx=5, pady=3)
-        item.grid_columnconfigure(0, weight=1)
+        """创建历史记录项 - UI-UX-PRO-MAX 高级风格"""
+        item = ctk.CTkFrame(
+            self.history_frame,
+            fg_color=(self.colors["bg_base"], self.colors["bg_base_dark"]),
+            corner_radius=10,
+            border_width=1,
+            border_color=(self.colors["border"], self.colors["border_dark"])
+        )
+        item.grid(row=row, column=0, sticky="ew", padx=0, pady=6)
+        item.grid_columnconfigure(1, weight=1)
 
         timestamp = record.get("timestamp", "")[:19].replace("T", " ")
         lang = record.get("language", "")
         preview = record.get("idea_preview", "")
 
-        ctk.CTkLabel(
+        # 左侧时间图标
+        time_frame = ctk.CTkFrame(
             item,
-            text=f"[{timestamp}] {lang}",
-            font=ctk.CTkFont(size=11),
-        ).grid(row=0, column=0, sticky="w", padx=10, pady=2)
+            width=50,
+            height=50,
+            fg_color=(self.colors["bg_hover"], self.colors["bg_hover_dark"]),
+            corner_radius=8
+        )
+        time_frame.grid(row=0, column=0, sticky="w", padx=16, pady=16)
+        time_frame.grid_propagate(False)
 
         ctk.CTkLabel(
-            item,
-            text=preview,
-            text_color="gray",
-            font=ctk.CTkFont(size=10),
-        ).grid(row=1, column=0, sticky="w", padx=10, pady=(0, 5))
+            time_frame,
+            text="📜",
+            font=ctk.CTkFont(size=22)
+        ).place(relx=0.5, rely=0.5, anchor="center")
 
-        # 按钮区域
+        # 中间信息区
+        info_frame = ctk.CTkFrame(item, fg_color="transparent")
+        info_frame.grid(row=0, column=1, sticky="ew", padx=(0, 16), pady=16)
+
+        # 标题行
+        title_row = ctk.CTkFrame(info_frame, fg_color="transparent")
+        title_row.pack(fill="x")
+
+        ctk.CTkLabel(
+            title_row,
+            text=timestamp,
+            font=ctk.CTkFont(size=13, weight="bold", family="Microsoft YaHei UI"),
+            text_color=(self.colors["text_primary"], self.colors["text_primary_dark"])
+        ).pack(side="left")
+
+        # 语言标签
+        if lang:
+            ctk.CTkLabel(
+                title_row,
+                text=lang,
+                font=ctk.CTkFont(size=9, family="Microsoft YaHei UI"),
+                text_color="white",
+                fg_color=self.colors["primary"],
+                corner_radius=4,
+                padx=6,
+                pady=1
+            ).pack(side="left", padx=(8, 0))
+
+        # 预览内容
+        ctk.CTkLabel(
+            info_frame,
+            text=preview if preview else "无描述",
+            font=ctk.CTkFont(size=11, family="Microsoft YaHei UI"),
+            text_color=(self.colors["text_muted"], self.colors["text_muted_dark"]),
+            anchor="w"
+        ).pack(fill="x", pady=(4, 0))
+
+        # 右侧按钮区
         btn_frame = ctk.CTkFrame(item, fg_color="transparent")
-        btn_frame.grid(row=0, column=1, rowspan=2, sticky="e", padx=5, pady=5)
+        btn_frame.grid(row=0, column=2, sticky="e", padx=16, pady=16)
 
         ctk.CTkButton(
             btn_frame,
             text="加载",
-            width=60,
+            font=ctk.CTkFont(size=12, family="Microsoft YaHei UI"),
+            width=70,
+            height=34,
+            corner_radius=8,
+            fg_color=self.colors["primary"],
+            hover_color=self.colors["primary_hover"],
             command=lambda r=record: self._load_history_item(r),
-        ).pack(side="left", padx=2)
+        ).pack(side="left", padx=(0, 8))
 
         ctk.CTkButton(
             btn_frame,
-            text="🗑️",
+            text="🗑",
+            font=ctk.CTkFont(size=14),
             width=40,
-            fg_color=("gray70", "gray30"),
-            hover_color=("red", "darkred"),
+            height=34,
+            corner_radius=8,
+            fg_color=(self.colors["bg_hover"], self.colors["bg_hover_dark"]),
+            hover_color=self.colors["error"],
+            text_color=(self.colors["text_muted"], self.colors["text_muted_dark"]),
             command=lambda idx=actual_index: self._delete_history_item(idx),
-        ).pack(side="left", padx=2)
+        ).pack(side="left")
 
     def _delete_history_item(self, index: int):
         """删除单条历史记录"""
@@ -5247,12 +6746,27 @@ class SettingsDialog(ctk.CTkToplevel):
         ctk.CTkButton(
             btn_frame,
             text="保存",
+            font=ctk.CTkFont(size=13, weight="bold", family="Microsoft YaHei UI"),
+            width=80,
+            height=36,
+            corner_radius=8,
+            fg_color=self.colors["primary"],
+            hover_color=self.colors["primary_hover"],
             command=self._save,
         ).pack(side="left", padx=5)
 
         ctk.CTkButton(
             btn_frame,
             text="取消",
+            font=ctk.CTkFont(size=13, family="Microsoft YaHei UI"),
+            width=80,
+            height=36,
+            corner_radius=8,
+            fg_color="transparent",
+            hover_color=(self.colors["bg_hover"], self.colors["bg_hover_dark"]),
+            text_color=(self.colors["text_secondary"], self.colors["text_secondary_dark"]),
+            border_width=1,
+            border_color=(self.colors["border"], self.colors["border_dark"]),
             command=self.destroy,
         ).pack(side="left", padx=5)
 
@@ -5271,7 +6785,17 @@ class SettingsDialog(ctk.CTkToplevel):
             row=1, column=0, sticky="w", padx=10, pady=5
         )
 
-        self.api_key_entry = ctk.CTkEntry(parent, show="•", width=400)
+        self.api_key_entry = ctk.CTkEntry(
+            parent,
+            show="•",
+            width=400,
+            height=36,
+            corner_radius=8,
+            font=ctk.CTkFont(size=12, family="Microsoft YaHei UI"),
+            fg_color=(self.colors["bg_elevated"], self.colors["bg_elevated_dark"]),
+            border_color=(self.colors["border"], self.colors["border_dark"]),
+            text_color=(self.colors["text_primary"], self.colors["text_primary_dark"])
+        )
         self.api_key_entry.grid(row=2, column=0, sticky="w", padx=10, pady=5)
         if self.api_config.api_key:
             self.api_key_entry.insert(0, self.api_config.api_key)
@@ -5281,7 +6805,16 @@ class SettingsDialog(ctk.CTkToplevel):
             row=3, column=0, sticky="w", padx=10, pady=5
         )
 
-        self.base_url_entry = ctk.CTkEntry(parent, width=400)
+        self.base_url_entry = ctk.CTkEntry(
+            parent,
+            width=400,
+            height=36,
+            corner_radius=8,
+            font=ctk.CTkFont(size=12, family="Microsoft YaHei UI"),
+            fg_color=(self.colors["bg_elevated"], self.colors["bg_elevated_dark"]),
+            border_color=(self.colors["border"], self.colors["border_dark"]),
+            text_color=(self.colors["text_primary"], self.colors["text_primary_dark"])
+        )
         self.base_url_entry.grid(row=4, column=0, sticky="w", padx=10, pady=5)
         self.base_url_entry.insert(0, self.api_config.base_url)
 
@@ -5296,6 +6829,14 @@ class SettingsDialog(ctk.CTkToplevel):
             values=AVAILABLE_MODELS,
             variable=self.model_var,
             width=300,
+            height=36,
+            corner_radius=8,
+            font=ctk.CTkFont(size=12, family="Microsoft YaHei UI"),
+            fg_color=(self.colors["bg_elevated"], self.colors["bg_elevated_dark"]),
+            button_color=(self.colors["bg_hover"], self.colors["bg_hover_dark"]),
+            button_hover_color=self.colors["primary"],
+            dropdown_fg_color=(self.colors["bg_base"], self.colors["bg_base_dark"]),
+            dropdown_hover_color=(self.colors["bg_hover"], self.colors["bg_hover_dark"])
         ).grid(row=6, column=0, sticky="w", padx=10, pady=5)
 
         # 提示
@@ -5308,6 +6849,14 @@ class SettingsDialog(ctk.CTkToplevel):
         ctk.CTkButton(
             parent,
             text="🔗 打开 Anthropic 控制台",
+            font=ctk.CTkFont(size=12, family="Microsoft YaHei UI"),
+            height=36,
+            corner_radius=8,
+            fg_color="transparent",
+            hover_color=(self.colors["bg_hover"], self.colors["bg_hover_dark"]),
+            text_color=(self.colors["primary"], self.colors["primary_light"]),
+            border_width=1,
+            border_color=(self.colors["border"], self.colors["border_dark"]),
             command=lambda: webbrowser.open("https://console.anthropic.com/"),
         ).grid(row=8, column=0, sticky="w", padx=10, pady=5)
 
@@ -5336,12 +6885,24 @@ class SettingsDialog(ctk.CTkToplevel):
             dir_frame,
             textvariable=self.default_output_var,
             width=300,
+            height=36,
+            corner_radius=8,
+            font=ctk.CTkFont(size=12, family="Microsoft YaHei UI"),
+            fg_color=(self.colors["bg_elevated"], self.colors["bg_elevated_dark"]),
+            border_color=(self.colors["border"], self.colors["border_dark"]),
+            text_color=(self.colors["text_primary"], self.colors["text_primary_dark"])
         ).pack(side="left")
 
         ctk.CTkButton(
             dir_frame,
             text="选择",
             width=60,
+            height=36,
+            corner_radius=8,
+            font=ctk.CTkFont(size=12, family="Microsoft YaHei UI"),
+            fg_color=(self.colors["bg_hover"], self.colors["bg_hover_dark"]),
+            hover_color=self.colors["primary"],
+            text_color=(self.colors["text_secondary"], self.colors["text_secondary_dark"]),
             command=self._select_default_output,
         ).pack(side="left", padx=5)
 
@@ -5353,6 +6914,12 @@ class SettingsDialog(ctk.CTkToplevel):
             parent,
             text="自动保存历史记录",
             variable=self.auto_save_var,
+            font=ctk.CTkFont(size=12, family="Microsoft YaHei UI"),
+            text_color=(self.colors["text_primary"], self.colors["text_primary_dark"]),
+            fg_color=self.colors["primary"],
+            hover_color=self.colors["primary_hover"],
+            checkmark_color="white",
+            border_color=(self.colors["border"], self.colors["border_dark"])
         ).grid(row=3, column=0, sticky="w", padx=10, pady=10)
 
     def _select_default_output(self):
@@ -5569,12 +7136,25 @@ class SnippetDialog(ctk.CTkToplevel):
         ctk.CTkButton(
             btn_frame,
             text="保存",
+            font=ctk.CTkFont(size=13, weight="bold", family="Microsoft YaHei UI"),
+            width=80,
+            height=36,
+            corner_radius=8,
             command=self._save,
         ).pack(side="left", padx=10)
 
         ctk.CTkButton(
             btn_frame,
             text="取消",
+            font=ctk.CTkFont(size=13, family="Microsoft YaHei UI"),
+            width=80,
+            height=36,
+            corner_radius=8,
+            fg_color="transparent",
+            hover_color=("#E4E4E7", "#27272A"),
+            text_color=("#52525B", "#A1A1AA"),
+            border_width=1,
+            border_color=("#E4E4E7", "#27272A"),
             command=self.destroy,
         ).pack(side="left", padx=10)
 
@@ -5661,8 +7241,14 @@ class TemplateDialog(ctk.CTkToplevel):
         name_frame.grid(row=0, column=0, sticky="ew", padx=20, pady=(20, 5))
         name_frame.grid_columnconfigure(1, weight=1)
 
-        ctk.CTkLabel(name_frame, text="模板名称:").grid(row=0, column=0, sticky="w", padx=5)
-        self.name_entry = ctk.CTkEntry(name_frame, placeholder_text="如: 电商网站")
+        ctk.CTkLabel(name_frame, text="模板名称:", font=ctk.CTkFont(size=12, family="Microsoft YaHei UI")).grid(row=0, column=0, sticky="w", padx=5)
+        self.name_entry = ctk.CTkEntry(
+            name_frame,
+            placeholder_text="如: 电商网站",
+            height=36,
+            corner_radius=8,
+            font=ctk.CTkFont(size=12, family="Microsoft YaHei UI")
+        )
         self.name_entry.grid(row=0, column=1, sticky="ew", padx=5)
 
         # 模板描述
@@ -5670,8 +7256,14 @@ class TemplateDialog(ctk.CTkToplevel):
         desc_frame.grid(row=1, column=0, sticky="ew", padx=20, pady=5)
         desc_frame.grid_columnconfigure(1, weight=1)
 
-        ctk.CTkLabel(desc_frame, text="模板描述:").grid(row=0, column=0, sticky="w", padx=5)
-        self.desc_entry = ctk.CTkEntry(desc_frame, placeholder_text="简短描述模板用途")
+        ctk.CTkLabel(desc_frame, text="模板描述:", font=ctk.CTkFont(size=12, family="Microsoft YaHei UI")).grid(row=0, column=0, sticky="w", padx=5)
+        self.desc_entry = ctk.CTkEntry(
+            desc_frame,
+            placeholder_text="简短描述模板用途",
+            height=36,
+            corner_radius=8,
+            font=ctk.CTkFont(size=12, family="Microsoft YaHei UI")
+        )
         self.desc_entry.grid(row=0, column=1, sticky="ew", padx=5)
 
         # 语言和框架
@@ -5680,7 +7272,7 @@ class TemplateDialog(ctk.CTkToplevel):
         tech_frame.grid_columnconfigure(1, weight=1)
         tech_frame.grid_columnconfigure(3, weight=1)
 
-        ctk.CTkLabel(tech_frame, text="编程语言:").grid(row=0, column=0, sticky="w", padx=5)
+        ctk.CTkLabel(tech_frame, text="编程语言:", font=ctk.CTkFont(size=12, family="Microsoft YaHei UI")).grid(row=0, column=0, sticky="w", padx=5)
         self.lang_var = ctk.StringVar(value="Python")
         ctk.CTkOptionMenu(
             tech_frame,
@@ -5688,15 +7280,21 @@ class TemplateDialog(ctk.CTkToplevel):
             variable=self.lang_var,
             command=self._on_lang_changed,
             width=150,
+            height=36,
+            corner_radius=8,
+            font=ctk.CTkFont(size=12, family="Microsoft YaHei UI")
         ).grid(row=0, column=1, sticky="w", padx=5)
 
-        ctk.CTkLabel(tech_frame, text="框架:").grid(row=0, column=2, sticky="w", padx=5)
+        ctk.CTkLabel(tech_frame, text="框架:", font=ctk.CTkFont(size=12, family="Microsoft YaHei UI")).grid(row=0, column=2, sticky="w", padx=5)
         self.framework_var = ctk.StringVar()
         self.framework_menu = ctk.CTkOptionMenu(
             tech_frame,
             values=[""],
             variable=self.framework_var,
             width=150,
+            height=36,
+            corner_radius=8,
+            font=ctk.CTkFont(size=12, family="Microsoft YaHei UI")
         )
         self.framework_menu.grid(row=0, column=3, sticky="w", padx=5)
 
@@ -5752,13 +7350,25 @@ class TemplateDialog(ctk.CTkToplevel):
         ctk.CTkButton(
             btn_frame,
             text="保存模板",
-            font=ctk.CTkFont(weight="bold"),
+            font=ctk.CTkFont(size=13, weight="bold", family="Microsoft YaHei UI"),
+            width=100,
+            height=38,
+            corner_radius=8,
             command=self._save,
         ).pack(side="left", padx=10)
 
         ctk.CTkButton(
             btn_frame,
             text="取消",
+            font=ctk.CTkFont(size=13, family="Microsoft YaHei UI"),
+            width=80,
+            height=38,
+            corner_radius=8,
+            fg_color="transparent",
+            hover_color=("#E4E4E7", "#27272A"),
+            text_color=("#52525B", "#A1A1AA"),
+            border_width=1,
+            border_color=("#E4E4E7", "#27272A"),
             command=self.destroy,
         ).pack(side="left", padx=10)
 
